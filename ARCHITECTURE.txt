@@ -1,0 +1,6 @@
+
+DREDGE Architecture
+
+App -> DredgeCore -> SharedStore -> App Group Container
+                        |
+                     Widget
