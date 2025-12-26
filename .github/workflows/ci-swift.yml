@@ -1,0 +1,59 @@
+# Xcode CI — macOS runner, builds and tests using xcodebuild (workspace + scheme)
+# Replace WORKSPACE, SCHEME and DESTINATION with your project's values.
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - '**'
+
+env:
+  # Edit these values for your project
+  WORKSPACE: "MyApp.xcworkspace"
+  SCHEME: "MyApp"
+  DESTINATION: "platform=iOS Simulator,name=iPhone 14,OS=17.2"
+
+jobs:
+  xcode-test:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Show Xcode / xcodebuild version
+        run: |
+          xcodebuild -version
+          xcodebuild -showsdks
+
+      - name: Install xcpretty (pretty test output)
+        run: gem install xcpretty
+
+      - name: Install CocoaPods (if Podfile exists)
+        run: |
+          if [ -f Podfile ]; then
+            gem install cocoapods
+            pod install --repo-update
+          fi
+
+      - name: Build for testing
+        run: |
+          set -o pipefail
+          echo "Building workspace: $WORKSPACE, scheme: $SCHEME"
+          xcodebuild clean build-for-testing \
+            -workspace "$WORKSPACE" \
+            -scheme "$SCHEME" \
+            -destination "$DESTINATION" \
+            CODE_SIGNING_ALLOWED=NO | xcpretty
+        shell: bash
+
+      - name: Run tests
+        run: |
+          set -o pipefail
+          echo "Testing workspace: $WORKSPACE, scheme: $SCHEME"
+          xcodebuild test-without-building \
+            -workspace "$WORKSPACE" \
+            -scheme "$SCHEME" \
+            -destination "$DESTINATION" \
+            CODE_SIGNING_ALLOWED=NO | xcpretty --test --color
+        shell: bash
