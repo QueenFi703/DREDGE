@@ -1,119 +1,97 @@
-# DREDGE × Dolly
+# DREDGE
 
-### GPU–CPU Lifter · Save · Files · Print
+**DREDGE** is a lightweight system for lifting, preserving, and releasing insights.
 
-**Created by:**  
-Fi  
-Ryan Cole  
+## Overview
 
----
+DREDGE × Dolly is designed to move insights gracefully through their full lifecycle:
 
-## Overview  
+1. **Lift** — Heavy processing handled efficiently (GPU when available, CPU when not)
+2. **Preserve** — Encrypted, internal persistence using secure storage
+3. **Release** — Exportable to files, printable to paper, and shareable by design
 
-**DREDGE × Dolly** is a lightweight lifting and release system designed to move insights gracefully through their full lifecycle:  
+## Installation
 
-1. **Lift** — heavy processing is handled efficiently (GPU when available, CPU when not)  
-2. **Preserve** — encrypted, internal persistence using App Groups  
-3. **Release** — exportable to Files, printable to paper, and shareable by design  
+### From PyPI (once published)
 
-Dolly does not decide.  
-DREDGE does not rush.  
-Together, they ensure nothing meaningful is dropped.  
+```bash
+pip install dredge
+```
 
----
+### From Source
 
-## Core Philosophy  
+```bash
+git clone https://github.com/QueenFi703/DREDGE.git
+cd DREDGE
+pip install -e .
+```
 
-- **Separation of Roles**
-- DREDGE narrates, identifies, and remembers  
-- Dolly carries weight and returns results intact  
-- **Strict adherence to Apple design principles**:  
-  - Apple-blessed paths only  
-  - No private APIs  
-  - No sandbox violations  
-  - No brittle hacks  
-- **Unwavering commitment to data integrity**:  
-  - One insight, many exits  
-  - Internal storage  
-  - User-owned files  
-  - Physical print  
+## Usage
 
-**Philosophy:** Digital memory should be portable, durable, and human-reachable.  
+### Command Line Interface
 
----
+```bash
+# Show version
+dredge --version
 
-## Included Components  
+# Run as module
+python -m dredge --version
+```
 
-**`SaveInsight.swift`**  
-Canonical internal storage using an App Group container.  
-This is the single source of truth for persisted insights.  
+## Development
 
-**`SaveToFiles.swift`**  
-Exports any saved insight using the system Share Sheet, allowing:  
-- **Save to Files**  
-- **iCloud Drive**  
-- **AirDrop**  
-- **External storage**  
+### Setup Development Environment
 
-Ownership is intentionally transferred to the user.  
+```bash
+# Clone the repository
+git clone https://github.com/QueenFi703/DREDGE.git
+cd DREDGE
 
-**`PrintInsight.swift`**  
-Enables AirPrint for any saved insight (**TXT**, **PDF**, **RTF**, **rendered Markdown**).  
-What was digital can become physical.  
+# Create a virtual environment
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
-**`ArchiveAndRelease.swift`**  
-An orchestration call combining:  
+# Install in editable mode with dev dependencies
+pip install -e ".[dev]"
+```
 
-Save → Files → Print  
+### Running Tests
 
-One action. Three guarantees.  
+```bash
+# Install pytest if not already installed
+pip install pytest
 
----
+# Run tests
+pytest
+```
 
-## Typical Flow  
+### Building the Package
 
-1. **Insight Created**  
-   ↓  
-2. (Optional) **Dolly Lift / Enrichment**  
-   ↓  
-3. **Encrypted Save (via App Group)**  
-   ↓  
-4. **Save to Files**  
-   ↓  
-5. **Print (AirPrint / PDF)**  
+```bash
+# Install build tools
+pip install build
 
-**No UI changes required. No schema migrations needed.**  
+# Build distribution files
+python -m build
+```
 
----
+## Requirements
 
-## Design Intent  
+- Python >= 3.10, < 3.13
+- No external runtime dependencies
 
-This system was built to support:  
-- **Long-term personal knowledge archives**  
-- **Portable insight libraries**  
-- **Private, user-controlled memory**  
-- **Future expansion into on-device ML and vector recall**  
+## License
 
-**DREDGE remembers.**  
-**Dolly moves.**  
-**The human decides.**  
+MIT License - See [LICENSE](LICENSE) for details.
 
----
+## Author
 
-## Credits  
+QueenFi703
 
-Concept, architecture, and integration by  
-**Fi**  
-**Ryan Cole**  
+## Version
 
----
+0.1.0
 
-## Next Steps  
+## Contributing
 
-If you want, I can:  
-- **Version this documentation**  
-- **Convert it to PDF for printing**  
-- **Add a CHANGELOG**  
-- **Align it with App Store submission language**  
-
-Just point—and Dolly will roll.
+Contributions are welcome! Please feel free to submit a Pull Request.
