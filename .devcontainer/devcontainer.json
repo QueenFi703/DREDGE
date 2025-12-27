@@ -17,7 +17,7 @@
     }
   },
   
-  "postCreateCommand": "pip install -e . && pip install -r requirements.txt",
+  "postCreateCommand": "pip install -r requirements.txt && pip install -e .",
   
   "customizations": {
     "vscode": {
