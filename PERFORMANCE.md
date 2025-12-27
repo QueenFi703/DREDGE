@@ -7,17 +7,21 @@ This document outlines the performance improvements made to the DREDGE codebase 
 ## 🚀 Performance Improvements Implemented
 
 ### 1. **Background Operation - Placeholder Work** (DREDGE_MVP.swift)
-**Issue**: The background operation uses `sleep(2)` as a placeholder for actual work.
+**Issue**: The background operation uses `Thread.sleep(2.0)` as a placeholder for actual work.
 
-**Analysis**: The `sleep()` call is intentional placeholder code simulating processing time. For an `Operation` subclass, blocking is expected until work completes. The real performance improvement opportunity here is to **replace the placeholder with actual useful work**.
+**Analysis**: This is demonstration/placeholder code. The `sleep()` call simulates processing time but doesn't perform real work. For an `Operation` subclass, the appropriate threading model depends on what actual work is being done.
 
-**Recommendation**: Replace with actual background processing tasks such as:
+**Current State**: Clearly documented with warning comments indicating this is placeholder code that should be completely replaced.
+
+**Recommendation**: Replace the entire `main()` implementation with actual background processing tasks such as:
 - Processing cached thoughts with `DredgeEngine.process()`
-- Syncing data to SharedStore
+- Syncing data to SharedStore or cloud services
 - Performing maintenance or cleanup tasks
 - Pre-loading or caching resources
 
-**Note**: Added clear TODO comments to guide future implementation.
+**Performance Note**: The threading approach (blocking vs. async) should be chosen based on the actual work being performed. For CPU-bound work, blocking is fine. For I/O-bound work, consider async patterns.
+
+**Action Taken**: Added clear warning comments (⚠️) to prevent confusion and guide implementation.
 
 ---
 
@@ -177,7 +181,7 @@ To verify performance improvements:
 
 ## 🌊 Philosophy
 
-> "Performance optimization is not premature when it prevents known inefficiencies.  
+> "Performance optimization is not premature when it prevents known inefficiencies.
 > Like water finding its path, code should flow naturally without unnecessary obstacles."
 
 These optimizations maintain DREDGE's elegance while ensuring responsiveness, scalability, and efficient resource usage.

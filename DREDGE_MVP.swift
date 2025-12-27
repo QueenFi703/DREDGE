@@ -198,13 +198,16 @@ class DredgeOperation: Operation {
     override func main() {
         if isCancelled { return }
         
-        // TODO: Replace with actual background processing work
-        // Current implementation is a placeholder that simulates processing time
-        // For real work, this should process thoughts, sync data, or perform maintenance
-        // Example: DredgeEngine.process(thoughts: loadCachedThoughts())
+        // ⚠️ PERFORMANCE NOTE: This is placeholder code
+        // Thread.sleep() is used here only to simulate processing time for demonstration
+        // In production, this entire operation should be replaced with actual work:
+        //   - Process cached thoughts: DredgeEngine.process(thoughts: loadCachedThoughts())
+        //   - Sync data to SharedStore or cloud services
+        //   - Perform maintenance tasks (cleanup, optimization)
+        //   - Pre-load or cache resources
+        // The actual work will determine the appropriate threading model
         
-        // Placeholder delay - in production, replace with actual work
-        Thread.sleep(forTimeInterval: 2.0)
+        Thread.sleep(forTimeInterval: 2.0)  // Placeholder - replace entire implementation
         
         if isCancelled { return }
     }
