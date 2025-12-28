@@ -5,6 +5,7 @@ This server exposes tools and resources for AI agents via the Model Context Prot
 import sys
 import logging
 from mcp.server.fastmcp import FastMCP
+from . import __version__
 
 # Configure logging to stderr to avoid interfering with MCP protocol
 logging.basicConfig(
@@ -25,7 +26,6 @@ mcp = FastMCP(
 @mcp.tool()
 def get_version() -> str:
     """Get the DREDGE package version."""
-    from . import __version__
     return f"DREDGE version: {__version__}"
 
 

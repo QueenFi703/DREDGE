@@ -14,7 +14,7 @@
     }
   },
   "postCreateCommand": "pip install -e .",
-  "postStartCommand": "python -m dredge.mcp_server &",
+  "postStartCommand": "nohup python -m dredge.mcp_server > /tmp/mcp_server.log 2>&1 &",
   "customizations": {
     "vscode": {
       "extensions": [
