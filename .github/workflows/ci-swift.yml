@@ -1,0 +1,181 @@
+# CI for DREDGE + Dolly
+# - Runs SPM tests for Dolly and DREDGE (including integration tests)
+# - Runs xcodebuild tests on iOS simulators (matrix)
+# Edit WORKSPACE / SCHEME / DESTINATIONS if you prefer to pin them.
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - '**'
+
+env:
+  # Optional: set these in the workflow or in repository secrets/vars to avoid auto-detection
+  # WORKSPACE: "MyApp.xcworkspace"
+  # SCHEME: "MyApp"
+  # If you leave WORKSPACE empty, workflow attempts to auto-detect a workspace or project.
+  DESTINATION_1: "platform=iOS Simulator,name=iPhone 14,OS=17.2"
+  DESTINATION_2: "platform=iOS Simulator,name=iPhone 14 Pro,OS=17.2"
+  DOLLY_PACKAGE_PATH: "Packages/Dolly"
+
+jobs:
+  spm-tests:
+    name: Dolly & DREDGE (Swift / SPM)
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Show Swift version
+        run: swift --version
+
+      - name: Cache SwiftPM build artifacts
+        uses: actions/cache@v3
+        with:
+          path: |
+            .build
+            .swiftpm
+            Packages/*/.build
+          # Hash Package.resolved if present, otherwise fallback to Package.swift files under Packages/
+          key: ${{ runner.os }}-swift-${{ hashFiles('**/Package.resolved', '**/Packages/*/Package.swift') }}
+          restore-keys: |
+            ${{ runner.os }}-swift-
+
+      - name: Run Dolly unit tests (SPM package)
+        run: swift test --package-path "${{ env.DOLLY_PACKAGE_PATH }}"
+
+      - name: Run DREDGE unit tests (including integration filter)
+        run: |
+          # Run integration tests specifically (fast) then optionally full test suite if desired
+          swift test --filter DredgeDollyIntegrationTests
+
+  ios-simulator-tests:
+    name: iOS simulator tests (xcodebuild) — matrix
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        destination:
+          - ${{ env.DESTINATION_1 }}
+          - ${{ env.DESTINATION_2 }}
+        # You can extend matrix with different Xcode versions or destinations later
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Show Xcode / xcodebuild version
+        run: |
+          xcodebuild -version
+          xcodebuild -showsdks
+
+      - name: Install xcpretty for nicer logs
+        run: gem install xcpretty
+
+      - name: Install CocoaPods (if Podfile exists)
+        run: |
+          if [ -f Podfile ]; then
+            gem install cocoapods
+            pod install --repo-update
+          fi
+
+      - name: Auto-detect workspace/project and scheme (if not provided)
+        id: detect
+        run: |
+          set -euo pipefail
+          # Use provided env vars if set
+          if [[ -n "${WORKSPACE-}" ]]; then
+            echo "workspace=${WORKSPACE}" >> $GITHUB_OUTPUT
+          else
+            # Try to find a workspace in repo root
+            WS=$(ls *.xcworkspace 2>/dev/null | head -n 1 || true)
+            if [[ -n "$WS" ]]; then
+              echo "Detected workspace: $WS"
+              echo "workspace=$WS" >> $GITHUB_OUTPUT
+            else
+              # try to find project
+              PJ=$(ls *.xcodeproj 2>/dev/null | head -n 1 || true)
+              if [[ -n "$PJ" ]]; then
+                echo "Detected project: $PJ"
+                echo "project=$PJ" >> $GITHUB_OUTPUT
+              else
+                echo "No .xcworkspace or .xcodeproj found in repo root. Please set WORKSPACE or ensure Xcode project/workspace is at repo root." >&2
+                exit 2
+              fi
+            fi
+          fi
+
+          # Try to detect a scheme if SCHEME not set
+          if [[ -n "${SCHEME-}" ]]; then
+            echo "scheme=${SCHEME}" >> $GITHUB_OUTPUT
+          else
+            # If workspace was found, list schemes
+            if [[ -n "${workspace-}" || -n "${WS-}" ]]; then
+              TARGET_WS="${WS:-${WORKSPACE:-}}"
+              echo "Listing schemes for workspace ${TARGET_WS}"
+              SCHEMES=$(xcodebuild -workspace "${TARGET_WS}" -list -json 2>/dev/null || true)
+            elif [[ -n "${project-}" || -n "${PJ-}" ]]; then
+              TARGET_PJ="${PJ:-${project:-}}"
+              echo "Listing schemes for project ${TARGET_PJ}"
+              SCHEMES=$(xcodebuild -project "${TARGET_PJ}" -list -json 2>/dev/null || true)
+            else
+              SCHEMES=""
+            fi
+
+            # Try to pull a usable scheme name from JSON output (best-effort)
+            if [[ -n "$SCHEMES" ]]; then
+              # Extract first scheme name from JSON using grep (portable approach)
+              DETECTED=$(echo "$SCHEMES" | tr -d '\r\n' | sed -n 's/.*"schemes":[^[]*\[\([^]]*\)\].*/\1/p' | sed 's/"//g' | awk -F, '{print $1}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+              if [[ -n "$DETECTED" ]]; then
+                echo "Detected scheme: $DETECTED"
+                echo "scheme=$DETECTED" >> $GITHUB_OUTPUT
+              else
+                echo "Could not detect scheme automatically; please set SCHEME." >&2
+                exit 3
+              fi
+            else
+              echo "Could not list schemes (xcodebuild -list returned empty); please set SCHEME." >&2
+              exit 3
+            fi
+          fi
+
+      - name: Build for testing (xcodebuild)
+        run: |
+          set -o pipefail
+          # Prefer workspace if detected
+          if [[ -n "${{ steps.detect.outputs.workspace }}" ]]; then
+            TARGET="-workspace \"${{ steps.detect.outputs.workspace }}\" -scheme \"${{ steps.detect.outputs.scheme }}\""
+          else
+            TARGET="-project \"${{ steps.detect.outputs.project }}\" -scheme \"${{ steps.detect.outputs.scheme }}\""
+          fi
+
+          echo "Building for testing with destination: ${{ matrix.destination }}"
+          xcodebuild clean build-for-testing $TARGET -destination "${{ matrix.destination }}" CODE_SIGNING_ALLOWED=NO | xcpretty
+        shell: bash
+
+      - name: Run tests (xcodebuild)
+        run: |
+          set -o pipefail
+          if [[ -n "${{ steps.detect.outputs.workspace }}" ]]; then
+            TARGET="-workspace \"${{ steps.detect.outputs.workspace }}\" -scheme \"${{ steps.detect.outputs.scheme }}\""
+          else
+            TARGET="-project \"${{ steps.detect.outputs.project }}\" -scheme \"${{ steps.detect.outputs.scheme }}\""
+          fi
+
+          echo "Testing with destination: ${{ matrix.destination }}"
+          xcodebuild test-without-building $TARGET -destination "${{ matrix.destination }}" CODE_SIGNING_ALLOWED=NO | xcpretty --test --color
+        shell: bash
+
+  integration-gate:
+    name: Integration gate (DREDGE + Dolly)
+    runs-on: macos-latest
+    needs:
+      - spm-tests
+      - ios-simulator-tests
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Run integration tests (final, full-run)
+        run: |
+          # Full integration run — ensures DREDGE exercises Dolly end-to-end
+          swift test --filter DredgeDollyIntegrationTests
