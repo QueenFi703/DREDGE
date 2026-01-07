@@ -1,0 +1,31 @@
+[package]
+name = "uh_ios"
+version = "0.1.0"
+edition = "2021"
+authors = ["Fi", "Ziggy"]
+description = "µH-iOS: A Formally Verified Micro-Hypervisor Nucleus for iOS"
+license = "MIT"
+
+[dependencies]
+# Core dependencies for safety and formal verification alignment
+thiserror = "1.0"
+bitflags = "2.4"
+
+# Optional dependencies for property-based testing
+[dev-dependencies]
+proptest = "1.4"
+
+[lib]
+name = "uh_ios"
+path = "src/lib.rs"
+crate-type = ["lib", "staticlib"]
+
+[profile.release]
+# Optimize for safety and determinism
+opt-level = 2
+lto = true
+codegen-units = 1
+
+[profile.dev]
+# Enable debug assertions for development
+debug-assertions = true
