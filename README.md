@@ -28,6 +28,14 @@ Formally verified micro-hypervisor nucleus for iOS/macOS providing:
 - Memory non-interference guarantees
 - Capability-based access control
 - Deterministic VM exit handling
+- Minimal trusted computing base (~2,436 LOC)
+
+**Documentation:**
+- Academic Whitepaper (LaTeX): `docs/uhios-whitepaper.tex`
+- Architecture & Implementation: `uh-ios/README.md`
+- Research Overview: `docs/uh-ios-paper.md`
+- Integration Guide: `docs/uhios-dredge-integration.md`
+- Build Instructions: `docs/README.md`
 - Minimal trusted computing base (~3500 LOC)
 
 **Documentation:**
@@ -179,7 +187,9 @@ Contributions welcome! Please see individual component READMEs for specific cont
 
 ## References
 
-- µH-iOS Implementation: `uh-ios/`
-- Research Paper: `docs/uh-ios-paper.md`
-- Dolly Integration: `DollyIntegration.md`
-- Integration Guide: `docs/uhios-dredge-integration.md`
+- **Academic Whitepaper**: `docs/uhios-whitepaper.tex` (LaTeX, arXiv-ready)
+- **µH-iOS Implementation**: `uh-ios/`
+- **Whitepaper Build Guide**: `docs/README.md`
+- **Research Overview**: `docs/uh-ios-paper.md`
+- **Integration Guide**: `docs/uhios-dredge-integration.md`
+- **Dolly Integration**: `DollyIntegration.md`
