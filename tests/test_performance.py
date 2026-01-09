@@ -77,3 +77,28 @@ def test_hash_id_uniqueness(client):
     
     # Should have 100 unique IDs (hash collisions are extremely unlikely)
     assert len(ids) >= 99, f"Expected ~100 unique IDs, got {len(ids)}"
+
+
+def test_compact_json_response(client):
+    """Test that JSON responses use compact encoding (no extra whitespace)."""
+    response = client.get('/health')
+    assert response.status_code == 200
+    
+    # Compact JSON should not have spaces after colons or commas
+    response_text = response.data.decode('utf-8')
+    
+    # Check that JSON is compact (no space after colon)
+    assert '": "' not in response_text or ': "' not in response_text
+    
+    # Verify the response is still valid JSON
+    data = json.loads(response_text)
+    assert data['status'] == 'healthy'
+    
+    print(f"\n✓ Response size (compact): {len(response_text)} bytes")
+    
+    # Compare with non-compact version
+    non_compact = json.dumps(data, separators=(', ', ': '))
+    compact = json.dumps(data, separators=(',', ':'))
+    compression_ratio = (1 - len(compact) / len(non_compact)) * 100
+    
+    print(f"✓ Size reduction: {compression_ratio:.1f}% smaller than non-compact JSON")

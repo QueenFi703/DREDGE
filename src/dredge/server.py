@@ -4,13 +4,27 @@ A lightweight web server for the DREDGE x Dolly integration.
 """
 import os
 from flask import Flask, jsonify, request
+from flask.json.provider import DefaultJSONProvider
 
 from . import __version__
+
+
+class CompactJSONProvider(DefaultJSONProvider):
+    """Custom JSON provider that uses compact encoding for better performance."""
+    
+    def dumps(self, obj, **kwargs):
+        """Serialize object to JSON with compact encoding (no extra whitespace)."""
+        # Override to use compact separators by default for smaller responses
+        kwargs.setdefault('separators', (',', ':'))
+        return super().dumps(obj, **kwargs)
 
 
 def create_app():
     """Create and configure the Flask application."""
     app = Flask(__name__)
+    
+    # Use compact JSON encoding for smaller response sizes
+    app.json = CompactJSONProvider(app)
     
     @app.route('/')
     def index():
