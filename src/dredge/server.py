@@ -2,7 +2,6 @@
 DREDGE x Dolly Server
 A lightweight web server for the DREDGE x Dolly integration.
 """
-import hashlib
 import os
 from flask import Flask, jsonify, request
 
@@ -51,8 +50,9 @@ def create_app():
         
         insight_text = data['insight_text']
         
-        # Simple hash-based ID generation
-        insight_id = hashlib.sha256(insight_text.encode()).hexdigest()
+        # Fast hash-based ID generation using Python's built-in hash
+        # This is much faster than SHA-256 and sufficient for non-cryptographic IDs
+        insight_id = format(hash(insight_text) & 0xFFFFFFFFFFFFFFFF, '016x')
         
         # Basic insight structure
         # Note: Full Dolly GPU integration would require PyTorch
