@@ -11,6 +11,13 @@ license = "MIT"
 thiserror = "1.0"
 bitflags = "2.4"
 
+# C++ interop for Hypervisor.framework bindings
+cxx = "1.0"
+
+# Build dependencies for cxx
+[build-dependencies]
+cxx-build = "1.0"
+
 # Optional dependencies for property-based testing
 [dev-dependencies]
 proptest = "1.4"

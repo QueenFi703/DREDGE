@@ -1,9 +1,9 @@
 //! Hypervisor.framework FFI bindings
 //!
 //! This module provides Foreign Function Interface (FFI) bindings to Apple's
-//! Hypervisor.framework. In a full implementation, these would link to actual
-//! HVF APIs. For this formal model, we provide stub implementations that
-//! model the nondeterministic execution oracle behavior of HVF.
+//! Hypervisor.framework via cxx for safe C++ interop. Stub implementations
+//! model the nondeterministic execution oracle behavior of HVF for formal
+//! verification purposes.
 //!
 //! # Safety
 //!
@@ -14,6 +14,32 @@
 
 use crate::Result;
 use crate::types::{VMID, CPUState, ExitReason};
+
+// CXX bridge to C++ Hypervisor.framework wrapper
+#[cxx::bridge(namespace = "uhios::hvf")]
+mod ffi {
+    unsafe extern "C++" {
+        include!("uh_ios/src/hvf_bridge.h");
+        
+        // Opaque C++ type - definition in hvf_bridge.cpp
+        type VMContext;
+        
+        // VM lifecycle
+        fn create_vm(vmid: u32) -> UniquePtr<VMContext>;
+        fn destroy_vm(ctx: UniquePtr<VMContext>);
+        
+        // VCPU management
+        fn create_vcpu(ctx: Pin<&mut VMContext>, vcpu_id: u32) -> bool;
+        fn destroy_vcpu(ctx: Pin<&mut VMContext>, vcpu_id: u32) -> bool;
+        
+        // Memory management
+        fn map_memory(ctx: Pin<&mut VMContext>, gpa: u64, hva: u64, size: u64) -> bool;
+        fn unmap_memory(ctx: Pin<&mut VMContext>, gpa: u64, size: u64) -> bool;
+    }
+}
+
+// Re-export cxx types for convenience
+pub use ffi::VMContext;
 
 /// Hypervisor.framework context handle
 ///
