@@ -1,56 +1,114 @@
 import argparse
 import sys
 import socket
+import json
 from . import __version__
 
 
-def cmd_inspect():
+# Output formatting functions
+def format_output(data, format_type="text"):
+    """Format output in various formats (text, json, yaml, ndjson)."""
+    if format_type == "json":
+        return json.dumps(data, indent=2)
+    elif format_type == "yaml":
+        # Simple YAML output without external dependency
+        lines = []
+        for key, value in data.items():
+            if isinstance(value, dict):
+                lines.append(f"{key}:")
+                for k, v in value.items():
+                    lines.append(f"  {k}: {v}")
+            else:
+                lines.append(f"{key}: {value}")
+        return "\n".join(lines)
+    elif format_type == "ndjson":
+        return json.dumps(data)
+    else:  # text (default)
+        return str(data)
+
+
+def cmd_inspect(format_type="text"):
     """Inspect DREDGE configuration and status."""
-    print("═" * 60)
-    print("DREDGE Inspector — Status & Philosophy")
-    print("═" * 60)
-    print()
-    print(f"📦 Version: {__version__}")
-    print(f"🔧 Build: stable")
-    print()
-    print("⚙️  Active Configuration:")
-    print(f"  • Default host: 0.0.0.0")
-    print(f"  • Default port: 3001")
-    print(f"  • Debug mode: False")
-    print()
-    print("🎯 Engine Details:")
-    print(f"  • JSON provider: CompactJSONProvider")
-    print(f"  • Hash strategy: 64-bit polynomial (31-bit rolling)")
-    print(f"  • Performance mode: compact")
-    print()
-    print("💡 Identity Contract:")
-    print(f"  • IDs: content-derived labels (not proofs)")
-    print(f"  • Collision behavior: last write wins")
-    print(f"  • Scale: suitable for <5e9 items")
-    print()
-    print("═" * 60)
+    data = {
+        "version": __version__,
+        "build": "stable",
+        "configuration": {
+            "default_host": "0.0.0.0",
+            "default_port": 3001,
+            "debug_mode": False
+        },
+        "engine": {
+            "json_provider": "CompactJSONProvider",
+            "hash_strategy": "64-bit polynomial (31-bit rolling)",
+            "performance_mode": "compact"
+        },
+        "identity_contract": {
+            "id_type": "content-derived labels (not proofs)",
+            "collision_behavior": "last write wins",
+            "scale": "suitable for <5e9 items"
+        }
+    }
+    
+    if format_type == "text":
+        print("═" * 60)
+        print("DREDGE Inspector — Status & Philosophy")
+        print("═" * 60)
+        print()
+        print(f"📦 Version: {data['version']}")
+        print(f"🔧 Build: {data['build']}")
+        print()
+        print("⚙️  Active Configuration:")
+        for k, v in data['configuration'].items():
+            print(f"  • {k.replace('_', ' ').title()}: {v}")
+        print()
+        print("🎯 Engine Details:")
+        for k, v in data['engine'].items():
+            print(f"  • {k.replace('_', ' ').title()}: {v}")
+        print()
+        print("💡 Identity Contract:")
+        for k, v in data['identity_contract'].items():
+            print(f"  • {k.replace('_', ' ').title()}: {v}")
+        print()
+        print("═" * 60)
+    else:
+        print(format_output(data, format_type))
+    
     return 0
 
 
-def cmd_doctor():
+def cmd_doctor(format_type="text", verbose=False):
     """Run diagnostics on DREDGE installation."""
-    print("═" * 60)
-    print("DREDGE Doctor — System Diagnostics")
-    print("═" * 60)
-    print()
-    
     checks_passed = 0
     checks_total = 0
+    results = {
+        "status": "unknown",
+        "checks": []
+    }
+    
+    if format_type == "text":
+        print("═" * 60)
+        print("DREDGE Doctor — System Diagnostics")
+        print("═" * 60)
+        print()
     
     # Check Python version
     checks_total += 1
     py_version = sys.version_info
-    if py_version >= (3, 10) and py_version < (3, 13):
-        print("✓ Python version compatible:", f"{py_version.major}.{py_version.minor}.{py_version.micro}")
+    check_result = {
+        "name": "Python version",
+        "status": "pass" if py_version >= (3, 10) and py_version < (3, 13) else "fail",
+        "details": f"{py_version.major}.{py_version.minor}.{py_version.micro}"
+    }
+    results["checks"].append(check_result)
+    
+    if check_result["status"] == "pass":
+        if format_type == "text":
+            print("✓ Python version compatible:", check_result["details"])
         checks_passed += 1
     else:
-        print("✗ Python version incompatible:", f"{py_version.major}.{py_version.minor}.{py_version.micro}")
-        print("  Expected: 3.10 <= version < 3.13")
+        if format_type == "text":
+            print("✗ Python version incompatible:", check_result["details"])
+            print("  Expected: 3.10 <= version < 3.13")
     
     # Check port availability
     checks_total += 1
@@ -60,42 +118,71 @@ def cmd_doctor():
         result = sock.connect_ex(('127.0.0.1', 3001))
         sock.close()
         if result != 0:
-            print("✓ Default port 3001 is available")
+            check_result = {"name": "Port 3001", "status": "available", "details": "Port is free"}
+            if format_type == "text":
+                print("✓ Default port 3001 is available")
             checks_passed += 1
         else:
-            print("⚠ Default port 3001 is in use")
-            print("  (This is OK if DREDGE server is running)")
+            check_result = {"name": "Port 3001", "status": "in_use", "details": "Port is occupied"}
+            if format_type == "text":
+                print("⚠ Default port 3001 is in use")
+                if verbose:
+                    print("  (This is OK if DREDGE server is running)")
             checks_passed += 1  # Not a failure
+        results["checks"].append(check_result)
     except Exception as e:
-        print(f"⚠ Could not check port availability: {e}")
-        # Still count as passed since exception doesn't mean failure
+        check_result = {"name": "Port 3001", "status": "error", "details": str(e)}
+        results["checks"].append(check_result)
+        if format_type == "text" and verbose:
+            print(f"⚠ Could not check port availability: {e}")
     
     # Check dependencies
     checks_total += 1
     try:
         import flask
-        print("✓ Flask dependency available")
+        check_result = {"name": "Flask dependency", "status": "pass", "details": "installed"}
+        if format_type == "text":
+            print("✓ Flask dependency available")
         checks_passed += 1
     except ImportError:
-        print("✗ Flask dependency missing")
-        print("  Run: pip install flask")
+        check_result = {"name": "Flask dependency", "status": "fail", "details": "missing"}
+        if format_type == "text":
+            print("✗ Flask dependency missing")
+            if verbose:
+                print("  Run: pip install flask")
+    results["checks"].append(check_result)
     
     # Check performance mode
     checks_total += 1
     try:
         from .server import CompactJSONProvider
-        print("✓ CompactJSONProvider configured")
+        check_result = {"name": "CompactJSONProvider", "status": "pass", "details": "configured"}
+        if format_type == "text":
+            print("✓ CompactJSONProvider configured")
         checks_passed += 1
     except Exception as e:
-        print(f"✗ CompactJSONProvider check failed: {e}")
+        check_result = {"name": "CompactJSONProvider", "status": "fail", "details": str(e)}
+        if format_type == "text":
+            print(f"✗ CompactJSONProvider check failed: {e}")
+    results["checks"].append(check_result)
     
-    print()
-    print("─" * 60)
-    if checks_passed == checks_total:
-        print("🎉 Everything looks good! System is healthy.")
+    # Set overall status
+    results["status"] = "healthy" if checks_passed == checks_total else "degraded"
+    results["summary"] = {
+        "checks_passed": checks_passed,
+        "checks_total": checks_total
+    }
+    
+    if format_type == "text":
+        print()
+        print("─" * 60)
+        if checks_passed == checks_total:
+            print("🎉 Everything looks good! System is healthy.")
+        else:
+            print(f"⚠️  {checks_total - checks_passed} issue(s) detected. Review above.")
+        print("═" * 60)
     else:
-        print(f"⚠️  {checks_total - checks_passed} issue(s) detected. Review above.")
-    print("═" * 60)
+        print(format_output(results, format_type))
     
     return 0 if checks_passed == checks_total else 1
 
@@ -159,6 +246,16 @@ def main(argv=None):
         action="store_true", 
         help="Enable debug mode"
     )
+    server_parser.add_argument(
+        "--quiet",
+        action="store_true",
+        help="Quiet mode: only fatal errors"
+    )
+    server_parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Verbose mode: timings, decisions, chosen paths"
+    )
     
     # Print command
     print_parser = subparsers.add_parser("print", help="Print a message or newline")
@@ -168,12 +265,35 @@ def main(argv=None):
         default=None,
         help="Text to print (if omitted, prints a clean newline)"
     )
+    print_parser.add_argument(
+        "--format",
+        choices=["text", "json", "yaml", "ndjson"],
+        default="text",
+        help="Output format (default: text)"
+    )
     
     # Inspect command
     inspect_parser = subparsers.add_parser("inspect", help="Inspect DREDGE configuration and status")
+    inspect_parser.add_argument(
+        "--format",
+        choices=["text", "json", "yaml", "ndjson"],
+        default="text",
+        help="Output format (default: text)"
+    )
     
     # Doctor command
     doctor_parser = subparsers.add_parser("doctor", help="Run system diagnostics")
+    doctor_parser.add_argument(
+        "--format",
+        choices=["text", "json", "yaml", "ndjson"],
+        default="text",
+        help="Output format (default: text)"
+    )
+    doctor_parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Verbose output with additional details"
+    )
     
     # Echo command (signature touch)
     echo_parser = subparsers.add_parser("echo", help="Verify DREDGE is alive")
@@ -201,23 +321,42 @@ def main(argv=None):
     
     if args.command == "serve":
         from .server import run_server
+        # Handle verbosity modes
+        if args.quiet:
+            # Quiet mode - minimal output
+            import logging
+            logging.basicConfig(level=logging.ERROR)
+        elif args.verbose:
+            # Verbose mode - detailed output
+            import logging
+            logging.basicConfig(level=logging.INFO)
+            print(f"🔧 Starting in verbose mode")
+            print(f"   Host: {args.host}")
+            print(f"   Port: {args.port}")
+            print(f"   Debug: {args.debug}")
+        
         run_server(host=args.host, port=args.port, debug=args.debug)
         return 0
     
     if args.command == "print":
-        if args.text is None:
-            # Print just a newline - "a quiet pause in the program"
-            print()
+        if args.format != "text":
+            # For non-text formats, output as structured data
+            data = {"text": args.text if args.text else ""}
+            print(format_output(data, args.format))
         else:
-            # Print the message
-            print(args.text)
+            if args.text is None:
+                # Print just a newline - "a quiet pause in the program"
+                print()
+            else:
+                # Print the message
+                print(args.text)
         return 0
     
     if args.command == "inspect":
-        return cmd_inspect()
+        return cmd_inspect(format_type=args.format)
     
     if args.command == "doctor":
-        return cmd_doctor()
+        return cmd_doctor(format_type=args.format, verbose=args.verbose)
     
     if args.command == "echo":
         return cmd_echo()

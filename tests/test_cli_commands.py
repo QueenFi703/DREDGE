@@ -12,7 +12,7 @@ def test_inspect_command(capsys):
     assert "DREDGE Inspector" in captured.out
     assert "Version: 0.1.0" in captured.out
     assert "CompactJSONProvider" in captured.out
-    assert "Hash strategy" in captured.out
+    assert "Hash Strategy" in captured.out  # Title-cased in new format
     assert "Identity Contract" in captured.out
 
 
