@@ -2,7 +2,67 @@ import argparse
 import sys
 import socket
 import json
+import os
 from . import __version__
+
+
+# Plugin discovery and management
+def discover_plugins():
+    """Discover installed DREDGE plugins via entry points.
+    
+    Uses importlib.metadata to find plugins registered via entry_points.
+    Returns a dict of plugin_name -> entry_point.
+    """
+    try:
+        from importlib.metadata import entry_points
+        
+        # Look for 'dredge.plugins' entry point group
+        if hasattr(entry_points(), 'select'):
+            # Python 3.10+ API
+            plugins = entry_points().select(group='dredge.plugins')
+        else:
+            # Python 3.9 API
+            plugins = entry_points().get('dredge.plugins', [])
+        
+        return {ep.name: ep for ep in plugins}
+    except ImportError:
+        # Fallback for older Python versions
+        return {}
+
+
+def cmd_plugin(action, plugin_name=None):
+    """Manage DREDGE plugins."""
+    if action == "list":
+        plugins = discover_plugins()
+        if not plugins:
+            print("No plugins installed.")
+            print()
+            print("To create a plugin, add an entry point in your package's setup.py:")
+            print("  entry_points={")
+            print("      'dredge.plugins': [")
+            print("          'myplugin = mypackage.plugin:main',")
+            print("      ]")
+            print("  }")
+        else:
+            print(f"Installed plugins ({len(plugins)}):")
+            for name, ep in plugins.items():
+                print(f"  • {name}")
+                print(f"    Entry: {ep.value}")
+    elif action == "info" and plugin_name:
+        plugins = discover_plugins()
+        if plugin_name not in plugins:
+            print(f"Plugin '{plugin_name}' not found.")
+            return 1
+        
+        ep = plugins[plugin_name]
+        print(f"Plugin: {plugin_name}")
+        print(f"Entry point: {ep.value}")
+        print(f"Module: {ep.module if hasattr(ep, 'module') else 'N/A'}")
+    else:
+        print("Usage: dredge plugin {list|info <name>}")
+        return 1
+    
+    return 0
 
 
 # Output formatting functions
@@ -193,17 +253,65 @@ def cmd_echo():
     return 0
 
 
-def cmd_id(count=1, format_type="hex"):
+def cmd_time(format_type="human"):
+    """Display current time in various formats.
+    
+    Time is slippery. This makes it speak clearly.
+    """
+    import time
+    import datetime
+    
+    now = time.time()
+    utc_now = datetime.datetime.now(datetime.timezone.utc)
+    local_now = datetime.datetime.now()
+    
+    if format_type == "human":
+        print(f"Local:     {local_now.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]}")
+        print(f"UTC:       {utc_now.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]}")
+        print(f"Unix:      {int(now)}")
+        print(f"Unix (ms): {int(now * 1000)}")
+        print(f"Unix (ns): {time.time_ns()}")
+    elif format_type == "json":
+        import json
+        data = {
+            "local": local_now.isoformat(),
+            "utc": utc_now.isoformat(),
+            "unix_seconds": int(now),
+            "unix_milliseconds": int(now * 1000),
+            "unix_nanoseconds": time.time_ns(),
+            "monotonic": time.monotonic()
+        }
+        print(json.dumps(data, indent=2))
+    elif format_type == "unix":
+        print(int(now))
+    elif format_type == "unix_ms":
+        print(int(now * 1000))
+    elif format_type == "unix_ns":
+        print(time.time_ns())
+    elif format_type == "iso":
+        print(utc_now.isoformat())
+    
+    return 0
+
+
+def cmd_id(count=1, format_type="hex", strategy="fast"):
     """Generate unique IDs using various strategies.
     
     Note: IDs are unique per call but not deterministic across runs.
     The 'hex' format uses the same 64-bit polynomial hash as the server.
+    
+    Strategies:
+    - fast: 64-bit rolling hash (default)
+    - uuid4: Random UUID
+    - timestamp: Time-based ID with microseconds
+    - infrastructure: 128-bit hash for high-scale
     """
     import uuid
     import time
+    import hashlib
     
     for i in range(count):
-        if format_type == "hex":
+        if strategy == "fast" and format_type == "hex":
             # Use 64-bit rolling hash (matching server strategy)
             # Generate unique input for each ID
             text = f"dredge-id-{uuid.uuid4()}-{time.time_ns()}"
@@ -212,9 +320,26 @@ def cmd_id(count=1, format_type="hex"):
                 hash_value = (hash_value * 31 + ord(char)) & 0xFFFFFFFFFFFFFFFF
             id_str = format(hash_value, '016x')
             print(id_str)
-        elif format_type == "uuid":
+        elif strategy == "infrastructure" and format_type == "hex":
+            # 128-bit hash for high-scale infrastructure
+            text = f"dredge-infra-{uuid.uuid4()}-{time.time_ns()}"
+            hash_obj = hashlib.blake2b(text.encode(), digest_size=16)
+            print(hash_obj.hexdigest())
+        elif strategy == "timestamp":
+            # Timestamp-based ID
+            ts = time.time_ns()
+            print(f"{ts:020d}")
+        elif format_type == "uuid" or strategy == "uuid4":
             # UUIDv4 (random)
             print(str(uuid.uuid4()))
+        else:
+            # Fallback to hex fast
+            text = f"dredge-id-{uuid.uuid4()}-{time.time_ns()}"
+            hash_value = 0
+            for char in text:
+                hash_value = (hash_value * 31 + ord(char)) & 0xFFFFFFFFFFFFFFFF
+            id_str = format(hash_value, '016x')
+            print(id_str)
     
     return 0
 
@@ -303,8 +428,17 @@ def main(argv=None):
     # Echo command (signature touch)
     echo_parser = subparsers.add_parser("echo", help="Verify DREDGE is alive")
     
+    # Time command
+    time_parser = subparsers.add_parser("time", help="Display current time in various formats")
+    time_parser.add_argument(
+        "--format",
+        choices=["human", "json", "unix", "unix_ms", "unix_ns", "iso"],
+        default="human",
+        help="Time format (default: human-readable)"
+    )
+    
     # ID command
-    id_parser = subparsers.add_parser("id", help="Generate deterministic IDs")
+    id_parser = subparsers.add_parser("id", help="Generate unique IDs")
     id_parser.add_argument(
         "--count",
         type=int,
@@ -315,8 +449,22 @@ def main(argv=None):
         "--format",
         choices=["hex", "uuid"],
         default="hex",
-        help="ID format: hex (64-bit hash), uuid (UUIDv4)"
+        help="ID format: hex (hash), uuid (UUIDv4)"
     )
+    id_parser.add_argument(
+        "--strategy",
+        choices=["fast", "uuid4", "timestamp", "infrastructure"],
+        default="fast",
+        help="ID generation strategy: fast (64-bit), infrastructure (128-bit), timestamp, uuid4"
+    )
+    
+    # Plugin command (simple implementation)
+    plugin_parser = subparsers.add_parser("plugin", help="Manage DREDGE plugins")
+    plugin_subparsers = plugin_parser.add_subparsers(dest="plugin_action", help="Plugin actions")
+    
+    list_plugins = plugin_subparsers.add_parser("list", help="List installed plugins")
+    info_plugin = plugin_subparsers.add_parser("info", help="Show plugin information")
+    info_plugin.add_argument("plugin_name", help="Plugin name")
     
     args = parser.parse_args(argv)
     
@@ -376,8 +524,19 @@ def main(argv=None):
     if args.command == "echo":
         return cmd_echo()
     
+    if args.command == "time":
+        return cmd_time(format_type=args.format)
+    
     if args.command == "id":
-        return cmd_id(count=args.count, format_type=args.format)
+        return cmd_id(count=args.count, format_type=args.format, strategy=args.strategy)
+    
+    if args.command == "plugin":
+        if args.plugin_action:
+            plugin_name = args.plugin_name if args.plugin_action == "info" else None
+            return cmd_plugin(action=args.plugin_action, plugin_name=plugin_name)
+        else:
+            print("Usage: dredge plugin {list|info <name>}")
+            return 1
     
     parser.print_help()
     return 0
