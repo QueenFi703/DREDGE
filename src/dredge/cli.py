@@ -68,6 +68,7 @@ def cmd_doctor():
             checks_passed += 1  # Not a failure
     except Exception as e:
         print(f"⚠ Could not check port availability: {e}")
+        # Still count as passed since exception doesn't mean failure
     
     # Check dependencies
     checks_total += 1
@@ -106,13 +107,18 @@ def cmd_echo():
 
 
 def cmd_id(count=1, format_type="hex"):
-    """Generate deterministic IDs using the hash strategy."""
+    """Generate unique IDs using various strategies.
+    
+    Note: IDs are unique per call but not deterministic across runs.
+    The 'hex' format uses the same 64-bit polynomial hash as the server.
+    """
     import uuid
     import time
     
     for i in range(count):
         if format_type == "hex":
             # Use 64-bit rolling hash (matching server strategy)
+            # Generate unique input for each ID
             text = f"dredge-id-{uuid.uuid4()}-{time.time_ns()}"
             hash_value = 0
             for char in text:
@@ -120,11 +126,7 @@ def cmd_id(count=1, format_type="hex"):
             id_str = format(hash_value, '016x')
             print(id_str)
         elif format_type == "uuid":
-            # UUIDv4
-            print(str(uuid.uuid4()))
-        elif format_type == "uuid7":
-            # UUIDv7 (time-based, would need uuid6 package for real implementation)
-            # For now, use uuid4 as placeholder
+            # UUIDv4 (random)
             print(str(uuid.uuid4()))
     
     return 0
@@ -186,9 +188,9 @@ def main(argv=None):
     )
     id_parser.add_argument(
         "--format",
-        choices=["hex", "uuid", "uuid7"],
+        choices=["hex", "uuid"],
         default="hex",
-        help="ID format (default: hex)"
+        help="ID format: hex (64-bit hash), uuid (UUIDv4)"
     )
     
     args = parser.parse_args(argv)
