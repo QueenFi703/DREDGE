@@ -234,10 +234,10 @@ ax = fig.add_subplot(111, projection='3d')
 If you use this benchmark in your research, please cite:
 
 ```
-@software{quasimoto2026,
+@software{quasimoto2024,
   author = {QueenFi703},
   title = {Quasimoto: Learnable Wave Functions for Non-Stationary Signal Processing},
-  year = {2026},
+  year = {2024},
   url = {https://github.com/QueenFi703/DREDGE}
 }
 ```

@@ -212,9 +212,11 @@ def train_model_4d(model_name, model, x, y_coord, z, t, signal, epochs=1000, ver
 
 def visualize_predictions(x, y_true, models, model_names, save_path='quasimoto_comparison.png'):
     """Plot true signal vs model predictions"""
-    fig, axes = plt.subplots(len(models) + 1, 1, figsize=(14, 3 * (len(models) + 1)))
+    num_plots = len(models) + 1  # +1 for ground truth
+    fig, axes = plt.subplots(num_plots, 1, figsize=(14, 3 * num_plots))
     
-    if len(models) == 0:
+    # Handle single subplot case
+    if num_plots == 1:
         axes = [axes]
     
     # Plot ground truth
