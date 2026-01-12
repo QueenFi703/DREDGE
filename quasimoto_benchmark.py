@@ -54,7 +54,10 @@ def generate_data():
     t = torch.zeros_like(x) # Static snapshot for this test
     # A chirp: frequency increases with x. Plus a local phase glitch at x=2.
     y = torch.sin(0.5 * x**2) * torch.exp(-0.1 * x**2)
-    y[500:550] += 0.5 * torch.sin(20 * x[500:550]) # The Glitch
+    # The Glitch - positioned at 50-55% of the signal
+    glitch_start = int(0.5 * len(x))
+    glitch_end = int(0.55 * len(x))
+    y[glitch_start:glitch_end] += 0.5 * torch.sin(20 * x[glitch_start:glitch_end])
     return x, t, y
 
 def train_model(model_name, model, x, t, y, epochs=2000):
@@ -63,10 +66,12 @@ def train_model(model_name, model, x, t, y, epochs=2000):
     
     for epoch in range(epochs):
         optimizer.zero_grad()
-        # Handle different input signatures
-        if model_name == "Quasimoto":
+        # Handle different input signatures - check if model accepts (x, t) or just (x)
+        try:
+            # Try (x, t) signature first (for Quasimoto)
             pred = model(x.squeeze(), t.squeeze()).view(-1, 1)
-        else:
+        except TypeError:
+            # Fall back to (x) signature (for SIREN)
             pred = model(x)
             
         loss = criterion(pred, y)
@@ -83,7 +88,7 @@ if __name__ == "__main__":
 
     # 1. Quasimoto (QueenFi703) - Using a small ensemble for parity
     class QuasimotoEnsemble(nn.Module):
-        def __init__(self, n=8):
+        def __init__(self, n=16):
             super().__init__()
             self.waves = nn.ModuleList([QuasimotoWave() for _ in range(n)])
             self.head = nn.Linear(n, 1)
