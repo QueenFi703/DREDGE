@@ -78,6 +78,61 @@ class QuasimotoWave4D(nn.Module):
         psi_real = self.A * torch.cos(phase) * envelope * modulation
         return psi_real
 
+class QuasimotoWave6D(nn.Module):
+    """
+    Author: QueenFi703
+    6D extension of QuasimotoWave for 5D spatial + temporal dimensions (x1, x2, x3, x4, x5, t).
+    Use cases: High-dimensional physics simulations, hyperspace data, advanced quantum systems,
+    multi-modal sensor fusion (e.g., RGBD + thermal + audio over time).
+    """
+    def __init__(self):
+        super().__init__()
+        self.A = nn.Parameter(torch.tensor(1.0))
+        # Wave numbers for each of 5 spatial dimensions
+        self.k1 = nn.Parameter(torch.randn(()))
+        self.k2 = nn.Parameter(torch.randn(()))
+        self.k3 = nn.Parameter(torch.randn(()))
+        self.k4 = nn.Parameter(torch.randn(()))
+        self.k5 = nn.Parameter(torch.randn(()))
+        self.omega = nn.Parameter(torch.randn(()))
+        # Velocities for each of 5 spatial dimensions
+        self.v1 = nn.Parameter(torch.randn(()))
+        self.v2 = nn.Parameter(torch.randn(()))
+        self.v3 = nn.Parameter(torch.randn(()))
+        self.v4 = nn.Parameter(torch.randn(()))
+        self.v5 = nn.Parameter(torch.randn(()))
+        self.log_sigma = nn.Parameter(torch.zeros(()))
+        self.phi = nn.Parameter(torch.zeros(()))
+        self.epsilon = nn.Parameter(torch.tensor(0.1))
+        # Modulation frequencies for each of 5 spatial dimensions
+        self.lmbda_1 = nn.Parameter(torch.randn(()))
+        self.lmbda_2 = nn.Parameter(torch.randn(()))
+        self.lmbda_3 = nn.Parameter(torch.randn(()))
+        self.lmbda_4 = nn.Parameter(torch.randn(()))
+        self.lmbda_5 = nn.Parameter(torch.randn(()))
+
+    def forward(self, x1, x2, x3, x4, x5, t):
+        sigma = torch.exp(self.log_sigma)
+        # Phase propagation in 5D space
+        phase = (self.k1 * x1 + self.k2 * x2 + self.k3 * x3 + 
+                self.k4 * x4 + self.k5 * x5 - self.omega * t)
+        # Gaussian envelope centered on moving point in 5D
+        d1 = x1 - self.v1 * t
+        d2 = x2 - self.v2 * t
+        d3 = x3 - self.v3 * t
+        d4 = x4 - self.v4 * t
+        d5 = x5 - self.v5 * t
+        envelope = torch.exp(-0.5 * ((d1**2 + d2**2 + d3**2 + d4**2 + d5**2) / sigma**2))
+        # 5D phase modulation
+        modulation = torch.sin(self.phi + 
+                              self.epsilon * torch.cos(self.lmbda_1 * x1 + 
+                                                       self.lmbda_2 * x2 + 
+                                                       self.lmbda_3 * x3 +
+                                                       self.lmbda_4 * x4 +
+                                                       self.lmbda_5 * x5))
+        psi_real = self.A * torch.cos(phase) * envelope * modulation
+        return psi_real
+
 class RandomFourierFeatures(nn.Module):
     """
     Random Fourier Features (RFF) baseline.
@@ -133,6 +188,17 @@ class QuasimotoEnsemble4D(nn.Module):
         feats = torch.stack([w(x, y, z, t) for w in self.waves], dim=-1)
         return self.head(feats)
 
+class QuasimotoEnsemble6D(nn.Module):
+    """6D ensemble for 5D spatial + temporal data"""
+    def __init__(self, n=6):
+        super().__init__()
+        self.waves = nn.ModuleList([QuasimotoWave6D() for _ in range(n)])
+        self.head = nn.Linear(n, 1)
+    
+    def forward(self, x1, x2, x3, x4, x5, t):
+        feats = torch.stack([w(x1, x2, x3, x4, x5, t) for w in self.waves], dim=-1)
+        return self.head(feats)
+
 # --- BENCHMARK TASK: The "Glitchy Chirp" ---
 def generate_data():
     x = torch.linspace(-10, 10, 1000).view(-1, 1)
@@ -165,6 +231,36 @@ def generate_4d_data(grid_size=20):
              torch.sin(2 * X_flat) * torch.cos(2 * Y_flat) * torch.sin(2 * Z_flat)
     
     return X_flat, Y_flat, Z_flat, t, signal.unsqueeze(-1)
+
+def generate_6d_data(grid_size=8):
+    """
+    Generate 6D spatiotemporal data (5D spatial + time).
+    Using smaller grid due to 5D computational complexity: 8^5 = 32,768 points
+    """
+    # Create 5D grid
+    coords = [torch.linspace(-3, 3, grid_size) for _ in range(5)]
+    
+    # Create meshgrid for all 5 spatial dimensions
+    grids = torch.meshgrid(*coords, indexing='ij')
+    
+    # Flatten all dimensions
+    X1_flat = grids[0].flatten()
+    X2_flat = grids[1].flatten()
+    X3_flat = grids[2].flatten()
+    X4_flat = grids[3].flatten()
+    X5_flat = grids[4].flatten()
+    
+    # Time snapshot
+    t = torch.zeros_like(X1_flat)
+    
+    # Generate a 5D signal with structure
+    # Use a combination of Gaussian envelope and oscillations in different dimensions
+    r_squared = X1_flat**2 + X2_flat**2 + X3_flat**2 + X4_flat**2 + X5_flat**2
+    signal = torch.exp(-0.1 * r_squared) * \
+             torch.sin(X1_flat + X2_flat) * torch.cos(X3_flat) * \
+             torch.sin(X4_flat - X5_flat) * torch.cos(X2_flat * X4_flat)
+    
+    return X1_flat, X2_flat, X3_flat, X4_flat, X5_flat, t, signal.unsqueeze(-1)
 
 def train_model(model_name, model, x, t, y, epochs=2000, verbose=True):
     optimizer = optim.Adam(model.parameters(), lr=1e-3)
@@ -206,6 +302,25 @@ def train_model_4d(model_name, model, x, y_coord, z, t, signal, epochs=1000, ver
         losses.append(loss.item())
         
         if verbose and epoch % 200 == 0:
+            print(f"[{model_name}] Epoch {epoch} Loss: {loss.item():.6f}")
+    
+    return loss.item(), losses
+
+def train_model_6d(model_name, model, x1, x2, x3, x4, x5, t, signal, epochs=500, verbose=True):
+    """Training function for 6D models"""
+    optimizer = optim.Adam(model.parameters(), lr=1e-3)
+    criterion = nn.MSELoss()
+    losses = []
+    
+    for epoch in range(epochs):
+        optimizer.zero_grad()
+        pred = model(x1, x2, x3, x4, x5, t).view(-1, 1)
+        loss = criterion(pred, signal)
+        loss.backward()
+        optimizer.step()
+        losses.append(loss.item())
+        
+        if verbose and epoch % 100 == 0:
             print(f"[{model_name}] Epoch {epoch} Loss: {loss.item():.6f}")
     
     return loss.item(), losses
