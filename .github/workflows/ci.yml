@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.10, 3.11, 3.12]
+        python-version: ["3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
@@ -49,7 +49,3 @@ jobs:
         with:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
-
-Additional notes:
-- The publish job is configured to run only on pushes to main or when tagging (v*), and requires a repository secret named PYPI_API_TOKEN containing a PyPI API token.
-- Do not merge until you add the PYPI_API_TOKEN secret and confirm the PyPI package name and account.
