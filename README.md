@@ -7,7 +7,7 @@ DREDGE — small Python package scaffold.
 Create a virtual environment and install:
 
 python -m venv .venv
-source .venv/bin/activate  # or .venv\\Scripts\\activate on Windows
+source .venv/bin/activate  # or .venv\Scripts\activate on Windows
 pip install -e .
 
 ## Server Usage
