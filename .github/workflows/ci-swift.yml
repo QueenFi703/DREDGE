@@ -143,26 +143,26 @@ jobs:
           set -o pipefail
           # Prefer workspace if detected
           if [[ -n "${{ steps.detect.outputs.workspace }}" ]]; then
-            TARGET="-workspace \"${{ steps.detect.outputs.workspace }}\" -scheme \"${{ steps.detect.outputs.scheme }}\""
+            TARGET=(-workspace "${{ steps.detect.outputs.workspace }}" -scheme "${{ steps.detect.outputs.scheme }}")
           else
-            TARGET="-project \"${{ steps.detect.outputs.project }}\" -scheme \"${{ steps.detect.outputs.scheme }}\""
+            TARGET=(-project "${{ steps.detect.outputs.project }}" -scheme "${{ steps.detect.outputs.scheme }}")
           fi
 
           echo "Building for testing with destination: ${{ matrix.destination }}"
-          xcodebuild clean build-for-testing $TARGET -destination "${{ matrix.destination }}" CODE_SIGNING_ALLOWED=NO | xcpretty
+          xcodebuild clean build-for-testing "${TARGET[@]}" -destination "${{ matrix.destination }}" CODE_SIGNING_ALLOWED=NO | xcpretty
         shell: bash
 
       - name: Run tests (xcodebuild)
         run: |
           set -o pipefail
           if [[ -n "${{ steps.detect.outputs.workspace }}" ]]; then
-            TARGET="-workspace \"${{ steps.detect.outputs.workspace }}\" -scheme \"${{ steps.detect.outputs.scheme }}\""
+            TARGET=(-workspace "${{ steps.detect.outputs.workspace }}" -scheme "${{ steps.detect.outputs.scheme }}")
           else
-            TARGET="-project \"${{ steps.detect.outputs.project }}\" -scheme \"${{ steps.detect.outputs.scheme }}\""
+            TARGET=(-project "${{ steps.detect.outputs.project }}" -scheme "${{ steps.detect.outputs.scheme }}")
           fi
 
           echo "Testing with destination: ${{ matrix.destination }}"
-          xcodebuild test-without-building $TARGET -destination "${{ matrix.destination }}" CODE_SIGNING_ALLOWED=NO | xcpretty --test --color
+          xcodebuild test-without-building "${TARGET[@]}" -destination "${{ matrix.destination }}" CODE_SIGNING_ALLOWED=NO | xcpretty --test --color
         shell: bash
 
   integration-gate:
