@@ -107,7 +107,7 @@ def test_mcp_fit_tool():
         if 'error' in result:
             pytest.skip(result['error'])
         
-        assert result['success'] == True
+        assert result['success'] is True
         assert 'final_loss' in result
         assert 'parameters' in result
         assert result['n_waves'] == 4
@@ -125,7 +125,7 @@ def test_mcp_detect_anomalies_tool():
         if 'error' in result:
             pytest.skip(result['error'])
         
-        assert result['success'] == True
+        assert result['success'] is True
         assert 'anomalies' in result
         assert 'count' in result
         assert isinstance(result['anomalies'], list)
@@ -143,7 +143,7 @@ def test_mcp_transform_insight_tool():
         if 'error' in result:
             pytest.skip(result['error'])
         
-        assert result['success'] == True
+        assert result['success'] is True
         assert 'insight' in result
         assert 'wave_encoding' in result
         assert result['insight'] == "Digital memory must be human-reachable"
@@ -161,7 +161,7 @@ def test_mcp_predict_continuation_tool():
         if 'error' in result:
             pytest.skip(result['error'])
         
-        assert result['success'] == True
+        assert result['success'] is True
         assert 'predictions' in result
         assert len(result['predictions']) == 5
     except ImportError:
@@ -181,7 +181,7 @@ def test_mcp_wave_similarity_tool():
         if 'error' in result:
             pytest.skip(result['error'])
         
-        assert result['success'] == True
+        assert result['success'] is True
         assert 'similarity_score' in result
         assert 0.0 <= result['similarity_score'] <= 1.0
     except ImportError:
