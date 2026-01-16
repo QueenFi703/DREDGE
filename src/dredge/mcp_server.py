@@ -4,22 +4,31 @@ Model Context Protocol server for serving Quasimoto wave function models.
 Integrates Quasimoto benchmarks with MCP protocol for external applications.
 """
 import json
-import sys
 from pathlib import Path
 from typing import Optional, Dict, Any, List
 import torch
 import torch.nn as nn
 
-# Add benchmarks to path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'benchmarks'))
-
-from quasimoto_extended_benchmark import (
-    QuasimotoWave,
-    QuasimotoWave4D,
-    QuasimotoWave6D,
-    QuasimotoEnsemble,
-    generate_data
-)
+# Import from benchmarks - assumes benchmarks are in Python path or installed
+try:
+    from quasimoto_extended_benchmark import (
+        QuasimotoWave,
+        QuasimotoWave4D,
+        QuasimotoWave6D,
+        QuasimotoEnsemble,
+        generate_data
+    )
+except ImportError:
+    # Fallback: add benchmarks to path
+    import sys
+    sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'benchmarks'))
+    from quasimoto_extended_benchmark import (
+        QuasimotoWave,
+        QuasimotoWave4D,
+        QuasimotoWave6D,
+        QuasimotoEnsemble,
+        generate_data
+    )
 
 from . import __version__
 
@@ -52,7 +61,6 @@ class QuasimotoMCPServer:
                 "operations": [
                     "load_model",
                     "inference",
-                    "train",
                     "get_parameters",
                     "benchmark"
                 ]
@@ -113,6 +121,19 @@ class QuasimotoMCPServer:
                 "error": str(e)
             }
     
+    def _create_input_tensors(self, inputs: Dict[str, Any], keys: List[str]) -> List[torch.Tensor]:
+        """
+        Helper method to create input tensors from input dictionary.
+        
+        Args:
+            inputs: Dictionary of input values
+            keys: List of keys to extract from inputs
+            
+        Returns:
+            List of tensors
+        """
+        return [torch.tensor(inputs.get(key, [0.0])) for key in keys]
+    
     def inference(self, model_id: str, inputs: Dict[str, Any]) -> Dict[str, Any]:
         """
         Run inference on a loaded model.
@@ -136,29 +157,21 @@ class QuasimotoMCPServer:
             
             with torch.no_grad():
                 if model_type == "quasimoto_1d":
-                    x = torch.tensor(inputs.get("x", [0.0]))
-                    t = torch.tensor(inputs.get("t", [0.0]))
+                    x, t = self._create_input_tensors(inputs, ["x", "t"])
                     output = model(x, t)
                     
                 elif model_type == "quasimoto_4d":
-                    x = torch.tensor(inputs.get("x", [0.0]))
-                    y = torch.tensor(inputs.get("y", [0.0]))
-                    z = torch.tensor(inputs.get("z", [0.0]))
-                    t = torch.tensor(inputs.get("t", [0.0]))
+                    x, y, z, t = self._create_input_tensors(inputs, ["x", "y", "z", "t"])
                     output = model(x, y, z, t)
                     
                 elif model_type == "quasimoto_6d":
-                    x1 = torch.tensor(inputs.get("x1", [0.0]))
-                    x2 = torch.tensor(inputs.get("x2", [0.0]))
-                    x3 = torch.tensor(inputs.get("x3", [0.0]))
-                    x4 = torch.tensor(inputs.get("x4", [0.0]))
-                    x5 = torch.tensor(inputs.get("x5", [0.0]))
-                    t = torch.tensor(inputs.get("t", [0.0]))
+                    x1, x2, x3, x4, x5, t = self._create_input_tensors(
+                        inputs, ["x1", "x2", "x3", "x4", "x5", "t"]
+                    )
                     output = model(x1, x2, x3, x4, x5, t)
                     
                 elif model_type == "quasimoto_ensemble":
-                    x = torch.tensor(inputs.get("x", [0.0]))
-                    t = torch.tensor(inputs.get("t", [0.0]))
+                    x, t = self._create_input_tensors(inputs, ["x", "t"])
                     output = model(x, t)
                     
                 else:
@@ -201,8 +214,14 @@ class QuasimotoMCPServer:
             
             params = {}
             for name, param in model.named_parameters():
+                # Safely convert parameter to Python value
+                if param.numel() == 1:
+                    value = param.detach().squeeze().item()
+                else:
+                    value = param.detach().tolist()
+                
                 params[name] = {
-                    "value": param.item() if param.numel() == 1 else param.tolist(),
+                    "value": value,
                     "shape": list(param.shape),
                     "requires_grad": param.requires_grad
                 }
