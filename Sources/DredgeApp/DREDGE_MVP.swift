@@ -3,7 +3,9 @@
 // SwiftUI + Background Tasks + Voice + Lock Screen Widget
 
 import SwiftUI
+#if canImport(UIKit)
 import BackgroundTasks
+#endif
 import DredgeCore
 
 @main
@@ -18,6 +20,7 @@ struct DredgeApp: App {
         }
     }
 
+#if canImport(UIKit)
     private func registerBackgroundTasks() {
         BGTaskScheduler.shared.register(
             forTaskWithIdentifier: "com.dredge.agent.process",
@@ -28,7 +31,7 @@ struct DredgeApp: App {
     }
 
     private func handleProcessingTask(task: BGProcessingTask) {
-        scheduleNextProcessing()
+        scheduleNextProcessing();
 
         let queue = OperationQueue()
         queue.maxConcurrentOperationCount = 1
@@ -53,6 +56,11 @@ struct DredgeApp: App {
 
         try? BGTaskScheduler.shared.submit(request)
     }
+#else
+    private func registerBackgroundTasks() {
+        // Background tasks are iOS-only. macOS builds skip this.
+    }
+#endif
 }
 
 // MARK: - Core UI
@@ -104,4 +112,3 @@ struct ContentView: View {
         isRecording.toggle()
     }
 }
-
