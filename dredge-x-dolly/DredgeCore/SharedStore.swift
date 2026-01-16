@@ -1,15 +1,26 @@
 import Foundation
+
 public enum SharedStore {
     public static let appGroupID = "group.com.dredge.agent"
     public static let surfacedKey = "surfacedInsight"
     public static let fileName = "surfaced_insight.txt"
     public static var defaults: UserDefaults? { UserDefaults(suiteName: appGroupID) }
+    
     public static var containerURL: URL? {
-        FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupID)
+        #if os(iOS) || os(macOS)
+        return FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupID)
+        #else
+        return nil
+        #endif
     }
+    
     public static var iCloudURL: URL? {
+        #if os(iOS) || os(macOS)
         guard FileManager.default.ubiquityIdentityToken != nil else { return nil }
         return FileManager.default.url(forUbiquityContainerIdentifier: nil)?.appendingPathComponent("Documents")
+        #else
+        return nil
+        #endif
     }
     public static func surfacedFileURL() -> URL? {
         containerURL?.appendingPathComponent(fileName)

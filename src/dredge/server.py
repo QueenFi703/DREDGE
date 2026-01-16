@@ -3,7 +3,6 @@ DREDGE x Dolly Server
 A lightweight web server for the DREDGE x Dolly integration.
 """
 import hashlib
-import os
 from functools import lru_cache
 from flask import Flask, jsonify, request
 
@@ -19,7 +18,7 @@ def _compute_insight_hash(insight_text: str) -> str:
 def create_app():
     """Create and configure the Flask application."""
     app = Flask(__name__)
-    
+
     @app.route('/')
     def index():
         """Root endpoint with API information."""
@@ -33,34 +32,34 @@ def create_app():
                 "/lift": "Lift an insight (POST)",
             }
         })
-    
+
     @app.route('/health')
     def health():
         """Health check endpoint."""
         return jsonify({"status": "healthy", "version": __version__})
-    
+
     @app.route('/lift', methods=['POST'])
     def lift_insight():
         """
         Lift an insight with Dolly integration.
-        
+
         Expected JSON payload:
         {
             "insight_text": "Your insight text here"
         }
         """
         data = request.get_json()
-        
+
         if not data or 'insight_text' not in data:
             return jsonify({
                 "error": "Missing required field: insight_text"
             }), 400
-        
+
         insight_text = data['insight_text']
-        
+
         # Optimized: Use cached hash computation for duplicate insights
         insight_id = _compute_insight_hash(insight_text)
-        
+
         # Basic insight structure
         # Note: Full Dolly GPU integration would require PyTorch
         result = {
@@ -69,16 +68,16 @@ def create_app():
             "lifted": True,
             "message": "Insight processed (full GPU acceleration requires PyTorch/Dolly setup)"
         }
-        
+
         return jsonify(result)
-    
+
     return app
 
 
 def run_server(host='0.0.0.0', port=3001, debug=False):
     """
     Run the DREDGE x Dolly server.
-    
+
     Args:
         host: Host to bind to (default: 0.0.0.0 for codespaces)
         port: Port to listen on (default: 3001)
