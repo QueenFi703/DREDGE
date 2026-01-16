@@ -55,12 +55,16 @@ class QuasimotoMCPServer:
                     "quasimoto_1d": "1D wave function (8 parameters)",
                     "quasimoto_4d": "4D spatiotemporal wave function (13 parameters)",
                     "quasimoto_6d": "6D high-dimensional wave function (17 parameters)",
-                    "quasimoto_ensemble": "Ensemble of wave functions (configurable)"},
+                    "quasimoto_ensemble": "Ensemble of wave functions (configurable)"
+                },
                 "operations": [
                     "load_model",
                     "inference",
                     "get_parameters",
-                    "benchmark"]}}
+                    "benchmark"
+                ]
+            }
+        }
 
     def load_model(self, model_type: str,
                    config: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
@@ -319,8 +323,9 @@ class QuasimotoMCPServer:
                 params.get("config"))
         elif operation == "inference":
             return self.inference(
-                params.get("model_id"), params.get(
-                    "inputs", {}))
+                params.get("model_id"),
+                params.get("inputs", {})
+            )
         elif operation == "get_parameters":
             return self.get_parameters(params.get("model_id"))
         elif operation == "benchmark":
