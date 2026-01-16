@@ -8,7 +8,7 @@ final class DREDGE_CliTests: XCTestCase {
     }
     
     func testMainExists() throws {
-        // Verify the module can be imported
-        XCTAssertNotNil(DREDGECli.self)
+        // Verify the module can be imported and has expected version
+        XCTAssertEqual(DREDGECli.version, "0.1.0")
     }
 }
