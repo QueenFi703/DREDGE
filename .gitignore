@@ -24,3 +24,18 @@ dist/
 *.xcworkspace
 DerivedData/
 .swiftpm/
+
+# Binary and archive files
+*.zip
+*.tar.gz
+*.docx
+*.torrent
+
+# Pytest cache
+.pytest_cache/
+.coverage
+htmlcov/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
