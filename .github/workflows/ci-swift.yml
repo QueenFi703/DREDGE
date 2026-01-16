@@ -68,26 +68,20 @@ jobs:
           xcodebuild -version
           xcodebuild -showsdks
 
+      - name: Install jq for JSON parsing
+        run: brew install jq
+
       - name: Install xcpretty for nicer logs
         run: |
           set -euo pipefail
-          if ! gem install xcpretty; then
-            echo "Error: Failed to install xcpretty via gem." >&2
-            exit 1
-          fi
+          gem install xcpretty || { echo "Error: Failed to install xcpretty via gem." >&2; exit 1; }
 
       - name: Install CocoaPods (if Podfile exists)
         run: |
           set -euo pipefail
           if [ -f Podfile ]; then
-            if ! gem install cocoapods; then
-              echo "Error: Failed to install CocoaPods via gem." >&2
-              exit 1
-            fi
-            if ! pod install --repo-update; then
-              echo "Error: 'pod install --repo-update' failed." >&2
-              exit 1
-            fi
+            gem install cocoapods || { echo "Error: Failed to install CocoaPods via gem." >&2; exit 1; }
+            pod install --repo-update || { echo "Error: 'pod install --repo-update' failed." >&2; exit 1; }
           fi
 
       - name: Auto-detect workspace/project and scheme (if not provided)
