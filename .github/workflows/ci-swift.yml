@@ -24,6 +24,8 @@ jobs:
         run: swift --version
 
       - name: Build with SPM
+        # Build only the CLI product to avoid multiple @main entry points
+        # (DredgeApp and DredgeWidget also have @main and should not be built together)
         run: swift build --product dredge-cli
 
       - name: Run tests with SPM

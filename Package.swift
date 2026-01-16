@@ -23,8 +23,7 @@ let package = Package(
         // CLI executable - ONLY includes swift/Sources/main.swift
         .executableTarget(
             name: "DREDGECli",
-            path: "swift/Sources",
-            exclude: []
+            path: "swift/Sources"
         ),
         // Shared core library
         .target(
