@@ -4,22 +4,45 @@ import PackageDescription
 let package = Package(
     name: "DREDGE-Cli",
     platforms: [
-        .macOS(. v12)
+        .macOS(.v12),
+        .iOS(.v15)
     ],
     products: [
+        .library(
+            name: "DredgeCore",
+            targets: ["DredgeCore"]
+        ),
+        .library(
+            name: "DredgeApp",
+            targets: ["DredgeApp"]
+        ),
         .executable(
             name: "dredge-cli",
-            targets: ["DREDGE-Cli"]
+            targets: ["DredgeCLI"]
         )
     ],
     targets: [
+        .target(
+            name: "DredgeCore",
+            path: "Sources/DredgeCore"
+        ),
+        .target(
+            name: "DredgeApp",
+            dependencies: ["DredgeCore"],
+            path: "Sources/DredgeApp",
+            resources: [
+                .process("AboutStrings.strings")
+            ]
+        ),
         .executableTarget(
-            name: "DREDGE-Cli",
-            path: "Sources"
+            name: "DredgeCLI",
+            dependencies: ["DredgeCore"],
+            path: "Sources/DredgeCLI"
         ),
         .testTarget(
-            name: "DREDGE-CliTests",
-            dependencies: ["DREDGE-Cli"]
+            name: "DredgeCoreTests",
+            dependencies: ["DredgeCore"],
+            path: "Tests/DredgeCoreTests"
         )
     ]
 )
