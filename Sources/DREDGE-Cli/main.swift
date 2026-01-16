@@ -3,7 +3,9 @@
 
 import Foundation
 
-print("DREDGE CLI v0.1")
+let version = "0.1.4"
+
+print("DREDGE CLI v\(version)")
 print("Type 'help' for available commands")
 
 // Basic command loop
@@ -24,7 +26,7 @@ while true {
         print("  version - Show version information")
         print("  exit - Exit the CLI")
     case "version":
-        print("DREDGE CLI v0.1.4")
+        print("DREDGE CLI v\(version)")
     case "exit", "quit":
         print("Goodbye!")
         exit(0)
