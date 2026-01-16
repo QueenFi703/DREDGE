@@ -17,3 +17,7 @@ dist/
 .vscode/
 .idea/
 *.swp
+
+# Swift Package Manager
+.build/
+.swiftpm/
