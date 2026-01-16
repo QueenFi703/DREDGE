@@ -56,8 +56,8 @@ jobs:
     strategy:
       matrix:
         destination:
-          - ${{ env.DESTINATION_1 }}
-          - ${{ env.DESTINATION_2 }}
+          - "platform=iOS Simulator,name=iPhone 14,OS=17.2"
+          - "platform=iOS Simulator,name=iPhone 14 Pro,OS=17.2"
         # You can extend matrix with different Xcode versions or destinations later
     steps:
       - name: Checkout repository
