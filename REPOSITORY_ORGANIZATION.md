@@ -41,6 +41,10 @@ DREDGE-Cli/
 ├── swift/               # Swift implementation
 │   ├── Package.swift
 │   ├── Sources/
+│   │   └── main.swift
+│   ├── Tests/
+│   │   └── DREDGE-CliTests/
+│   │       └── DREDGE_CliTests.swift
 │   ├── DREDGE_MVP.swift
 │   ├── SharedStore.swift
 │   └── AboutStrings.strings
@@ -90,6 +94,9 @@ swift build
 
 # Run
 swift run dredge-cli
+
+# Test
+swift test
 ```
 
 ## Adding New Files
@@ -97,10 +104,19 @@ swift run dredge-cli
 - **Documentation**: Add to `docs/` directory
 - **Benchmarks**: Add to `benchmarks/` directory
 - **Python source**: Add to `src/dredge/` directory
-- **Swift source**: Add to `swift/` directory or `swift/Sources/`
-- **Tests**: Add to `tests/` directory
+- **Swift source**: Add to `swift/Sources/` directory
+- **Python tests**: Add to `tests/` directory
+- **Swift tests**: Add to `swift/Tests/` directory
 - **Archives**: Add to `archives/` (will be ignored by git)
 
 ## Migration Notes
 
 This reorganization was performed to clean up the main branch architecture. Files were moved from the root directory into organized subdirectories while maintaining full functionality of both Python and Swift implementations.
+
+### Recent Changes (2026-01-16)
+
+- **Removed** conflicting root `Package.swift` that referenced non-existent directories
+- **Moved** `Tests/` directory into `swift/Tests/` to properly organize Swift tests
+- **Updated** `swift/Package.swift` to include test targets
+- **Fixed** Python test command names to use `dredge-cli` instead of `dredge`
+- **Fixed** Python performance tests to properly import benchmark modules
