@@ -4,6 +4,7 @@ Provides metrics collection, exporters, and distributed tracing support.
 """
 import time
 import logging
+import uuid
 from typing import Dict, Any, Optional, List
 from collections import defaultdict, deque
 from datetime import datetime
@@ -159,9 +160,8 @@ class TraceSpan:
         self.logs: List[Dict[str, Any]] = []
     
     def _generate_id(self) -> str:
-        """Generate a unique ID for trace/span."""
-        import random
-        return f"{int(time.time() * 1000000)}{random.randint(1000, 9999)}"
+        """Generate a unique ID for trace/span using UUID."""
+        return str(uuid.uuid4().hex)[:16]
     
     def set_tag(self, key: str, value: Any):
         """Set a tag on the span."""

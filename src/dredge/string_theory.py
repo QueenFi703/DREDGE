@@ -15,6 +15,10 @@ PLANCK_LENGTH = 1.616e-35  # meters
 # Computational constants
 DEFAULT_KK_MODES = 10  # Number of Kaluza-Klein modes to compute
 
+# Neural network constants
+MIN_NN_LAYERS = 1  # Minimum number of hidden layers
+MAX_NN_LAYERS = 10  # Maximum number of hidden layers
+
 
 def get_optimal_device() -> str:
     """
@@ -162,7 +166,7 @@ class StringTheoryNN(nn.Module):
         super().__init__()
         self.dimensions = dimensions
         self.hidden_size = hidden_size
-        self.num_layers = max(1, min(num_layers, 10))  # Clamp between 1-10
+        self.num_layers = max(MIN_NN_LAYERS, min(num_layers, MAX_NN_LAYERS))  # Clamp between limits
         self.use_batch_norm = use_batch_norm
         self.device = device
         
