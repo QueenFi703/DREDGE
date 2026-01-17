@@ -49,6 +49,10 @@ public struct StringTheory {
 
 // MARK: - MCP Client Support
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 public struct MCPClient {
     public let serverURL: String
     
@@ -56,7 +60,9 @@ public struct MCPClient {
         self.serverURL = serverURL
     }
     
-    /// List available MCP capabilities
+    #if os(macOS) || os(iOS) || os(watchOS) || os(tvOS)
+    /// List available MCP capabilities (Apple platforms)
+    @available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
     public func listCapabilities() async throws -> [String: Any] {
         guard let url = URL(string: serverURL) else {
             throw MCPError.invalidURL
@@ -70,7 +76,8 @@ public struct MCPClient {
         return json
     }
     
-    /// Send MCP request
+    /// Send MCP request (Apple platforms)
+    @available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
     public func sendRequest(operation: String, params: [String: Any]) async throws -> [String: Any] {
         guard let url = URL(string: "\(serverURL)/mcp") else {
             throw MCPError.invalidURL
@@ -93,6 +100,19 @@ public struct MCPClient {
         
         return json
     }
+    #else
+    /// Placeholder for non-Apple platforms (Linux, etc.)
+    public func listCapabilities() throws -> [String: Any] {
+        print("Note: MCP Client networking requires macOS 12.0+ or iOS 15.0+")
+        return ["note": "MCP Client networking not available on this platform"]
+    }
+    
+    /// Placeholder for non-Apple platforms (Linux, etc.)
+    public func sendRequest(operation: String, params: [String: Any]) throws -> [String: Any] {
+        print("Note: MCP Client networking requires macOS 12.0+ or iOS 15.0+")
+        return ["note": "MCP Client networking not available on this platform"]
+    }
+    #endif
 }
 
 public enum MCPError: Error {
@@ -112,7 +132,9 @@ public struct UnifiedDREDGE {
         self.mcpClient = MCPClient(serverURL: serverURL)
     }
     
-    /// Compute unified field combining string theory and Quasimoto
+    #if os(macOS) || os(iOS) || os(watchOS) || os(tvOS)
+    /// Compute unified field combining string theory and Quasimoto (Apple platforms)
+    @available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
     public func unifiedInference(
         insight: String,
         coords: [Double],
@@ -127,7 +149,8 @@ public struct UnifiedDREDGE {
         return try await mcpClient.sendRequest(operation: "unified_inference", params: params)
     }
     
-    /// Get string theory spectrum
+    /// Get string theory spectrum (Apple platforms)
+    @available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *)
     public func getStringSpectrum(maxModes: Int = 10) async throws -> [String: Any] {
         let params: [String: Any] = [
             "max_modes": maxModes,
@@ -136,6 +159,23 @@ public struct UnifiedDREDGE {
         
         return try await mcpClient.sendRequest(operation: "string_spectrum", params: params)
     }
+    #else
+    /// Placeholder for non-Apple platforms
+    public func unifiedInference(
+        insight: String,
+        coords: [Double],
+        modes: [Int]
+    ) throws -> [String: Any] {
+        print("Note: Unified inference networking requires macOS 12.0+ or iOS 15.0+")
+        return ["note": "Networking not available on this platform"]
+    }
+    
+    /// Placeholder for non-Apple platforms
+    public func getStringSpectrum(maxModes: Int = 10) throws -> [String: Any] {
+        print("Note: String spectrum networking requires macOS 12.0+ or iOS 15.0+")
+        return ["note": "Networking not available on this platform"]
+    }
+    #endif
 }
 
 DREDGECli.run()
