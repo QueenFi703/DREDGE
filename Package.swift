@@ -12,13 +12,27 @@ let package = Package(
         .executable(
             name: "dredge-cli",
             targets: ["DREDGECli"]
+        ),
+        // iOS MVP App library
+        .library(
+            name: "DREDGEMVPApp",
+            targets: ["DREDGEMVPApp"]
         )
     ],
     targets: [
-        // CLI executable target (from swift/Sources/DREDGECli.swift)
+        // CLI executable target (from swift/Sources/main.swift)
         .executableTarget(
             name: "DREDGECli",
             path: "swift/Sources"
+        ),
+        // iOS MVP App library target
+        .target(
+            name: "DREDGEMVPApp",
+            dependencies: [],
+            path: "swift/DREDGE_MVP_App",
+            resources: [
+                .process("AboutStrings.strings")
+            ]
         ),
         // Test target
         .testTarget(
