@@ -2,7 +2,19 @@
 
 [![DEPENDADREDGEABOT](https://img.shields.io/badge/dependencies-DEPENDADREDGEABOT-blueviolet?style=for-the-badge&logo=dependabot)](https://github.com/QueenFi703/DREDGE-Cli/blob/main/.github/dependabot.yml)
 
-DREDGE — small Python package scaffold.
+DREDGE — small Python package scaffold with String Theory integration.
+
+## 🚀 Quick Start with VS Code
+
+**Clone this repository directly into VS Code!**
+
+See the detailed [VS Code Setup Guide](docs/VSCODE_SETUP.md) for complete instructions on cloning, setting up, and developing in VS Code.
+
+**Quick clone command:**
+```bash
+git clone https://github.com/QueenFi703/DREDGE-Cli.git
+code DREDGE-Cli
+```
 
 ## Repository Structure
 
