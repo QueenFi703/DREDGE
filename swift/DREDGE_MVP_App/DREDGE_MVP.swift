@@ -4,7 +4,9 @@
 
 #if canImport(SwiftUI)
 import SwiftUI
+#if os(iOS)
 import BackgroundTasks
+#endif
 import NaturalLanguage
 import Speech
 import AVFoundation
@@ -12,7 +14,9 @@ import AVFoundation
 @main
 struct DredgeApp: App {
     init() {
+        #if os(iOS)
         registerBackgroundTasks()
+        #endif
     }
 
     var body: some Scene {
@@ -21,6 +25,7 @@ struct DredgeApp: App {
         }
     }
 
+    #if os(iOS)
     private func registerBackgroundTasks() {
         BGTaskScheduler.shared.register(
             forTaskWithIdentifier: "com.dredge.agent.process",
@@ -56,6 +61,7 @@ struct DredgeApp: App {
 
         try? BGTaskScheduler.shared.submit(request)
     }
+    #endif
 }
 
 // MARK: - Core UI
