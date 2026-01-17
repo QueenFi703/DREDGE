@@ -5,6 +5,7 @@ Provides scale-out capabilities with task queues and worker processes.
 import json
 import time
 import logging
+import uuid
 from typing import Dict, Any, Optional, Callable, List
 from queue import Queue, Empty
 from threading import Thread, Event
@@ -78,11 +79,9 @@ class TaskQueue:
             Task ID
         """
         if not task_id:
-            # Generate task ID from operation and params
-            task_hash = hashlib.sha256(
-                f"{operation}:{json.dumps(params, sort_keys=True)}:{time.time()}".encode()
-            ).hexdigest()[:16]
-            task_id = f"{operation}_{task_hash}"
+            # Generate cryptographically secure task ID
+            unique_part = uuid.uuid4().hex[:12]
+            task_id = f"{operation}_{unique_part}"
         
         task = Task(task_id, operation, params)
         self._queue.put(task)
