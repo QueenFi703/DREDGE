@@ -2,6 +2,7 @@
 DREDGE String Theory Module
 Implements string theory models for integration with DREDGE and Quasimoto.
 Provides string vibration modes, dimensional analysis, and theoretical physics calculations.
+Supports GPU acceleration for enhanced performance.
 """
 import math
 from typing import List, Dict, Any, Tuple
@@ -13,6 +14,42 @@ PLANCK_LENGTH = 1.616e-35  # meters
 
 # Computational constants
 DEFAULT_KK_MODES = 10  # Number of Kaluza-Klein modes to compute
+
+
+def get_optimal_device() -> str:
+    """
+    Detect and return the optimal device for computation.
+    
+    Returns:
+        Device string: 'cuda', 'mps', or 'cpu'
+    """
+    if torch.cuda.is_available():
+        return 'cuda'
+    elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+        return 'mps'
+    return 'cpu'
+
+
+def get_device_info() -> Dict[str, Any]:
+    """
+    Get detailed information about available compute devices.
+    
+    Returns:
+        Dictionary with device capabilities
+    """
+    info = {
+        'optimal_device': get_optimal_device(),
+        'cpu_available': True,
+        'cuda_available': torch.cuda.is_available(),
+        'mps_available': hasattr(torch.backends, 'mps') and torch.backends.mps.is_available(),
+    }
+    
+    if info['cuda_available']:
+        info['cuda_device_count'] = torch.cuda.device_count()
+        info['cuda_device_name'] = torch.cuda.get_device_name(0) if torch.cuda.device_count() > 0 else None
+        info['cuda_version'] = torch.version.cuda
+    
+    return info
 
 
 class StringVibration:
@@ -103,30 +140,55 @@ class StringVibration:
 
 class StringTheoryNN(nn.Module):
     """
-    Neural network model for string theory calculations.
+    Enhanced neural network model for string theory calculations.
     
+    Supports configurable depth, GPU acceleration, and batch normalization.
     Integrates with Quasimoto wave functions to model string dynamics.
     """
     
-    def __init__(self, dimensions: int = 10, hidden_size: int = 64):
+    def __init__(self, dimensions: int = 10, hidden_size: int = 64, 
+                 num_layers: int = 2, use_batch_norm: bool = False,
+                 device: str = 'cpu'):
         """
         Initialize string theory neural network.
         
         Args:
             dimensions: Input dimensionality (spacetime dimensions)
             hidden_size: Hidden layer size
+            num_layers: Number of hidden layers (default: 2, supports 1-10)
+            use_batch_norm: Whether to use batch normalization
+            device: Device to run on ('cpu', 'cuda', or 'mps')
         """
         super().__init__()
         self.dimensions = dimensions
         self.hidden_size = hidden_size
+        self.num_layers = max(1, min(num_layers, 10))  # Clamp between 1-10
+        self.use_batch_norm = use_batch_norm
+        self.device = device
         
-        # Network layers
-        self.input_layer = nn.Linear(dimensions, hidden_size)
-        self.hidden_layer = nn.Linear(hidden_size, hidden_size)
-        self.output_layer = nn.Linear(hidden_size, 1)
+        # Build network layers
+        layers = []
         
-        # Activation functions
-        self.activation = nn.Tanh()
+        # Input layer
+        layers.append(nn.Linear(dimensions, hidden_size))
+        if use_batch_norm:
+            layers.append(nn.BatchNorm1d(hidden_size))
+        layers.append(nn.Tanh())
+        
+        # Hidden layers
+        for _ in range(self.num_layers - 1):
+            layers.append(nn.Linear(hidden_size, hidden_size))
+            if use_batch_norm:
+                layers.append(nn.BatchNorm1d(hidden_size))
+            layers.append(nn.Tanh())
+        
+        # Output layer
+        layers.append(nn.Linear(hidden_size, 1))
+        
+        self.network = nn.Sequential(*layers)
+        
+        # Move to device
+        self.to(self.device)
         
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -138,10 +200,19 @@ class StringTheoryNN(nn.Module):
         Returns:
             String amplitude predictions
         """
-        h1 = self.activation(self.input_layer(x))
-        h2 = self.activation(self.hidden_layer(h1))
-        output = self.output_layer(h2)
-        return output
+        # Ensure input is on correct device
+        x = x.to(self.device)
+        return self.network(x)
+    
+    def get_device_info(self) -> Dict[str, Any]:
+        """Get information about the device being used."""
+        return {
+            'device': self.device,
+            'cuda_available': torch.cuda.is_available(),
+            'mps_available': hasattr(torch.backends, 'mps') and torch.backends.mps.is_available(),
+            'num_layers': self.num_layers,
+            'use_batch_norm': self.use_batch_norm
+        }
 
 
 class StringQuasimocoIntegration:
@@ -258,21 +329,41 @@ def calculate_string_parameters(
 
 class DREDGEStringTheoryServer:
     """
-    Server component integrating DREDGE, Quasimoto, and String Theory.
+    Enhanced server component integrating DREDGE, Quasimoto, and String Theory.
     
-    Provides unified interface for all three theoretical frameworks.
+    Provides unified interface for all three theoretical frameworks with
+    GPU acceleration, caching, and monitoring support.
     """
     
-    def __init__(self):
-        """Initialize DREDGE String Theory server."""
+    def __init__(self, use_cache: bool = True, device: str = 'auto'):
+        """
+        Initialize DREDGE String Theory server.
+        
+        Args:
+            use_cache: Whether to enable result caching
+            device: Device to use ('auto', 'cpu', 'cuda', or 'mps')
+        """
         self.string_vibration = StringVibration()
         self.integration = StringQuasimocoIntegration()
         self.models: Dict[str, nn.Module] = {}
         
+        # Determine device
+        self.device = get_optimal_device() if device == 'auto' else device
+        
+        # Initialize cache if enabled
+        self.use_cache = use_cache
+        if use_cache:
+            from .cache import ResultCache
+            self.cache = ResultCache()
+        else:
+            self.cache = None
+        
     def load_string_model(
         self, 
         dimensions: int = 10, 
-        hidden_size: int = 64
+        hidden_size: int = 64,
+        num_layers: int = 2,
+        use_batch_norm: bool = False
     ) -> Dict[str, Any]:
         """
         Load a string theory neural network model.
@@ -280,12 +371,20 @@ class DREDGEStringTheoryServer:
         Args:
             dimensions: Spacetime dimensions
             hidden_size: Neural network hidden layer size
+            num_layers: Number of hidden layers (1-10)
+            use_batch_norm: Whether to use batch normalization
             
         Returns:
             Model information
         """
         model_id = f"string_theory_{len(self.models)}"
-        model = StringTheoryNN(dimensions=dimensions, hidden_size=hidden_size)
+        model = StringTheoryNN(
+            dimensions=dimensions, 
+            hidden_size=hidden_size,
+            num_layers=num_layers,
+            use_batch_norm=use_batch_norm,
+            device=self.device
+        )
         
         n_params = sum(p.numel() for p in model.parameters())
         
@@ -295,7 +394,10 @@ class DREDGEStringTheoryServer:
             "success": True,
             "model_id": model_id,
             "dimensions": dimensions,
-            "n_parameters": n_params
+            "n_parameters": n_params,
+            "num_layers": num_layers,
+            "device": self.device,
+            "device_info": model.get_device_info()
         }
     
     def compute_string_spectrum(
@@ -304,7 +406,7 @@ class DREDGEStringTheoryServer:
         dimensions: int = 10
     ) -> Dict[str, Any]:
         """
-        Compute string vibrational spectrum.
+        Compute string vibrational spectrum with caching.
         
         Args:
             max_modes: Maximum number of modes
@@ -313,15 +415,29 @@ class DREDGEStringTheoryServer:
         Returns:
             Spectrum data
         """
+        # Check cache first
+        if self.cache:
+            cached = self.cache.get_spectrum(max_modes, dimensions)
+            if cached:
+                cached['cached'] = True
+                return cached
+        
         vibration = StringVibration(dimensions=dimensions)
         spectrum = vibration.mode_spectrum(max_modes=max_modes)
         
-        return {
+        result = {
             "success": True,
             "dimensions": dimensions,
             "max_modes": max_modes,
-            "energy_spectrum": spectrum
+            "energy_spectrum": spectrum,
+            "cached": False
         }
+        
+        # Cache the result
+        if self.cache:
+            self.cache.set_spectrum(max_modes, dimensions, result)
+        
+        return result
     
     def unified_inference(
         self,
@@ -330,7 +446,7 @@ class DREDGEStringTheoryServer:
         string_modes: List[int]
     ) -> Dict[str, Any]:
         """
-        Unified inference combining DREDGE, Quasimoto, and String Theory.
+        Unified inference combining DREDGE, Quasimoto, and String Theory with caching.
         
         Args:
             dredge_insight: DREDGE insight text
@@ -340,6 +456,13 @@ class DREDGEStringTheoryServer:
         Returns:
             Combined inference results
         """
+        # Check cache first
+        if self.cache:
+            cached = self.cache.get_unified_inference(dredge_insight, quasimoto_coords, string_modes)
+            if cached:
+                cached['cached'] = True
+                return cached
+        
         # Compute coupled amplitude
         amplitude = self.integration.coupled_amplitude(
             string_modes=string_modes,
@@ -349,11 +472,19 @@ class DREDGEStringTheoryServer:
         # Generate unified field
         field = self.integration.generate_unified_field()
         
-        return {
+        result = {
             "success": True,
             "dredge_insight": dredge_insight,
             "quasimoto_coordinates": quasimoto_coords,
             "string_modes": string_modes,
             "coupled_amplitude": amplitude,
-            "unified_field": field
+            "unified_field": field,
+            "device": self.device,
+            "cached": False
         }
+        
+        # Cache the result
+        if self.cache:
+            self.cache.set_unified_inference(dredge_insight, quasimoto_coords, string_modes, result)
+        
+        return result
