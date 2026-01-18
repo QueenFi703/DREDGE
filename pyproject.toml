@@ -24,6 +24,12 @@ dredge-cli = "dredge.cli:main"
 [project.urls]
 Homepage = "https://github.com/QueenFi703/DREDGE"
 
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+dredge = ["custom_ops/*.py"]
+
 [tool.black]
 line-length = 88
 target-version = ['py39', 'py310', 'py311']

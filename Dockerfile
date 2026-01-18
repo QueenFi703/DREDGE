@@ -52,7 +52,7 @@ CMD ["dredge-cli", "serve", "--host", "0.0.0.0", "--port", "3001"]
 # ────────────────────────────────────────────────────────────────[...]
 # Stage 3: GPU Build (Full Dolly + Quasimoto)
 # ────────────────────────────────────────────────────────────────[...]
-FROM nvidia/cuda:11.8.0-runtime-ubuntu22.04 AS gpu-build
+FROM nvidia/cuda:11.8.0-devel-ubuntu22.04 AS gpu-build
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3.11 \
@@ -61,6 +61,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     g++ \
     git \
+    make \
+    cmake \
     && rm -rf /var/lib/apt/lists/*
 
 RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1 && \
