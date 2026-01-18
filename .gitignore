@@ -51,3 +51,13 @@ nginx/ssl/*.crt
 monitoring/grafana/data/
 prometheus-data/
 grafana-data/
+
+# CUDA/C++ extension build artifacts
+*.so
+*.o
+*.a
+*.dylib
+*.dll
+*.lib
+.ninja_deps
+.ninja_log
