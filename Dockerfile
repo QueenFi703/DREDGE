@@ -73,7 +73,7 @@ COPY requirements.txt pyproject.toml ./
 # Upgrade pip and install build dependencies for PEP 660 editable install support
 RUN pip3 install --no-cache-dir --upgrade pip setuptools>=64 wheel
 
-# Install PyTorch with CUDA 11.8 support (pinned for GPU kernel stability)
+# Install PyTorch with CUDA 11.8 support (latest compatible versions)
 # Note: Overrides requirements.txt torch>=2.0.0 with specific CUDA build
 RUN pip3 install --no-cache-dir \
     torch \
