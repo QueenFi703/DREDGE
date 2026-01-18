@@ -226,7 +226,9 @@ git pull origin main
 
 If you're using VS Code Remote Development or GitHub Codespaces:
 
-1. The `.devcontainer` configuration automatically forwards ports 3001 and 3002
+1. The `.devcontainer` configuration automatically:
+   - Forwards ports 3001 and 3002
+   - Fetches the full git history (unshallows the repository) for complete commit access
 2. You can access servers at:
    - DREDGE Server: `http://localhost:3001`
    - MCP Server: `http://localhost:3002`

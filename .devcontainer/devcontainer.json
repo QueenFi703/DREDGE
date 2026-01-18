@@ -21,7 +21,7 @@
     }
   },
   
-  "postCreateCommand": "pip install -r requirements.txt && pip install -e .",
+  "postCreateCommand": "git fetch --unshallow && pip install -r requirements.txt && pip install -e .",
   
   "customizations": {
     "vscode": {

@@ -200,7 +200,9 @@ curl -X POST http://localhost:3002/mcp \
 
 ### GitHub Codespaces
 
-The repository includes `.devcontainer/devcontainer.json` configured to automatically forward ports 3001 and 3002 when running in GitHub Codespaces.
+The repository includes `.devcontainer/devcontainer.json` configured to:
+- Automatically forward ports 3001 and 3002 when running in GitHub Codespaces
+- Fetch the full git repository history (unshallow the repository) for complete commit access
 
 ## Swift Development
 
