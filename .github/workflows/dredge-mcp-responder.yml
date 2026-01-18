@@ -1,3 +1,20 @@
+# DREDGE MCP Responder Workflow
+#
+# This workflow provides automated responses to GitHub events (issues, PRs, and comments).
+# It demonstrates best practices for robust GitHub Actions workflows:
+#
+# - Uses safe shell defaults (set -euo pipefail) to fail fast on errors
+# - Reads event payload directly from $GITHUB_EVENT_PATH to avoid quoting/escaping issues
+# - Base64-encodes outputs to prevent shell metacharacter problems
+# - Includes fork-safety guards to prevent permission errors on forked PRs
+# - Automatically labels Dependabot PRs
+# - Generates comprehensive job summaries with actual event and repository values
+#
+# The workflow is triggered on:
+# - Issue events (opened, edited)
+# - Issue comment events (created, edited)
+# - Pull request events (opened, edited, synchronize)
+
 name: DREDGE MCP Responder
 
 on:
