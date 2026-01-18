@@ -1,7 +1,7 @@
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # DREDGE MCP Responder
 # GitHub as Prompt, DREDGE-CLI MCP as Responder
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #
 # "Every GitHub event is a knock; DREDGE answers with intent."
 #
@@ -15,7 +15,7 @@
 # - Analyzes dependency updates
 # - Provides philosophical insights on dependency management
 #
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 name: DREDGE MCP Responder
 
@@ -79,11 +79,9 @@ jobs:
           echo "DREDGE MCP Response:"
           cat out.json
           
-          # Set multi-line output using heredoc delimiter
-          # Format: key<<DELIMITER followed by content and closing DELIMITER
-          echo "response<<EOF" >> $GITHUB_OUTPUT
-          cat out.json >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          # Set output safely using base64 to avoid shell metacharacter issues
+          # Base64 encoding prevents syntax errors from parentheses, backticks, etc.
+          echo "response=$(base64 -w 0 < out.json)" >> $GITHUB_OUTPUT
 
       - name: Comment on Pull Request
         if: github.event_name == 'pull_request'
@@ -149,28 +147,18 @@ jobs:
         run: |
           echo "## 🔮 DREDGE MCP Response" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Event**: \`$GITHUB_EVENT_NAME\`" >> $GITHUB_STEP_SUMMARY
-          echo "**Repository**: \`${{ github.repository }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "**Ref**: \`${{ github.ref }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "**SHA**: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          
-          if [ -f out.json ]; then
-            echo "### Response Output" >> $GITHUB_STEP_SUMMARY
-            echo "\`\`\`json" >> $GITHUB_STEP_SUMMARY
-            cat out.json >> $GITHUB_STEP_SUMMARY
-            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "❌ No output generated" >> $GITHUB_STEP_SUMMARY
-          fi
-          
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "---" >> $GITHUB_STEP_SUMMARY
-          echo "*Every GitHub event is a knock; DREDGE answers with intent.* 🔮" >> $GITHUB_STEP_SUMMARY
-
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          echo "**Event**: \
+            \
+          \
+            \
+            \
+            \
+          \
+            **Repository**: \
+            *Every GitHub event is a knock; DREDGE answers with intent.* 🔮" >> $GITHUB_STEP_SUMMARY
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # NOTES & BEST PRACTICES
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #
 # Security:
 # - GITHUB_TOKEN scoped to minimal permissions (read contents, write issues/PRs)
@@ -192,4 +180,4 @@ jobs:
 # - GitHub Actions: Native event handling
 # - DREDGE MCP: Philosophical response generation
 #
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
