@@ -3,7 +3,24 @@ import os
 import platform
 import shutil
 import sys
+import json
+from pathlib import Path
 from . import __version__
+from .health import get_system_info, format_system_info, check_health, validate_server_config
+from .config import load_config, save_config, init_config, get_config_path, DEFAULT_CONFIG
+
+
+def _merge_server_args(args, config_key: str, default_host: str, default_port: int):
+    """Merge CLI arguments with configuration for server commands."""
+    config = load_config()
+    server_config = config.get(config_key, {})
+    
+    host = args.host if hasattr(args, 'host') and args.host != default_host else server_config.get("host", default_host)
+    port = args.port if hasattr(args, 'port') and args.port != default_port else server_config.get("port", default_port)
+    debug = args.debug if hasattr(args, 'debug') else False
+    debug = debug or server_config.get("debug", False)
+    
+    return host, port, debug, server_config
 
 
 def _detect_mobile_context():
@@ -36,6 +53,7 @@ def main(argv=None):
         formatter_class=formatter,
     )
     parser.add_argument("--version", action="store_true", help="Print version and exit")
+    parser.add_argument("--version-info", action="store_true", help="Print version and system information")
     parser.add_argument(
         "--no-spinner",
         action="store_true",
@@ -139,25 +157,120 @@ def main(argv=None):
         help="Output file path (default: out.json)"
     )
     
+    # Health check command
+    health_parser = subparsers.add_parser(
+        "health", help="Check system health and dependencies", formatter_class=formatter
+    )
+    health_parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Output health check as JSON"
+    )
+    
+    # Info command
+    info_parser = subparsers.add_parser(
+        "info", help="Show system information", formatter_class=formatter
+    )
+    
+    # Config command
+    config_parser = subparsers.add_parser(
+        "config", help="Manage configuration", formatter_class=formatter
+    )
+    config_subparsers = config_parser.add_subparsers(dest="config_action", help="Config actions")
+    
+    config_show = config_subparsers.add_parser(
+        "show", help="Show current configuration", formatter_class=formatter
+    )
+    config_init = config_subparsers.add_parser(
+        "init", help="Initialize default configuration file", formatter_class=formatter
+    )
+    config_path_parser = config_subparsers.add_parser(
+        "path", help="Show configuration file path", formatter_class=formatter
+    )
+    
     args = parser.parse_args(argv)
     
     if args.version:
         print(__version__)
         return 0
     
+    if args.version_info:
+        print(f"DREDGE version {__version__}")
+        print()
+        sys_info = get_system_info()
+        print(format_system_info(sys_info))
+        return 0
+    
+    if args.command == "health":
+        health = check_health()
+        if args.json:
+            print(json.dumps(health, indent=2))
+        else:
+            print(f"Health Status: {health['status']}")
+            print()
+            print("Dependency Checks:")
+            for dep, info in health['dependencies'].items():
+                status = "✓" if info['available'] else "✗"
+                version = f" ({info['version']})" if info.get('version') else ""
+                print(f"  {status} {dep}{version}")
+        return 0 if health['status'] == 'healthy' else 1
+    
+    if args.command == "info":
+        sys_info = get_system_info()
+        print(format_system_info(sys_info))
+        return 0
+    
+    if args.command == "config":
+        if args.config_action == "show":
+            config = load_config()
+            print(json.dumps(config, indent=2))
+            return 0
+        elif args.config_action == "init":
+            config_file = get_config_path()
+            if config_file.exists():
+                print(f"Config file already exists at: {config_file}")
+                return 1
+            init_config()
+            print(f"Initialized default config at: {config_file}")
+            return 0
+        elif args.config_action == "path":
+            print(get_config_path())
+            return 0
+        else:
+            config_parser.print_help()
+            return 1
+    
     if args.command == "serve":
+        # Load config and merge with CLI args
+        host, port, debug, _ = _merge_server_args(args, "serve", "0.0.0.0", 3001)
+        
+        try:
+            validate_server_config(host, port, debug)
+        except ValueError as e:
+            print(f"Error: {e}", file=sys.stderr)
+            return 1
+        
         from .server import run_server
-        run_server(host=args.host, port=args.port, debug=args.debug)
+        run_server(host=host, port=port, debug=debug)
         return 0
     
     if args.command == "mcp":
+        # Load config and merge with CLI args
+        host, port, debug, mcp_config = _merge_server_args(args, "mcp", "0.0.0.0", 3002)
+        device = args.device if args.device != "auto" else mcp_config.get("device", "auto")
+        
+        try:
+            validate_server_config(host, port, debug)
+        except ValueError as e:
+            print(f"Error: {e}", file=sys.stderr)
+            return 1
+        
         from .mcp_server import run_mcp_server
-        run_mcp_server(host=args.host, port=args.port, debug=args.debug, device=args.device)
+        run_mcp_server(host=host, port=port, debug=debug, device=device)
         return 0
     
     if args.command == "github-event":
         from .github_event_handler import process_github_event
-        import json
         
         # Process the event directly without modifying sys.argv
         result = process_github_event(
