@@ -35,7 +35,7 @@ class TestGitHubEventHandler:
         assert result["branch"] == "main"
         assert result["commits"] == 1
         assert "DREDGE MCP" in result["comment"]
-        assert result["is_dependabot"] == False
+        assert result["is_dependabot"] is False
     
     def test_handle_dependabot_push(self):
         """Test handling of Dependabot push events"""
@@ -89,7 +89,7 @@ class TestGitHubEventHandler:
         assert result["action"] == "opened"
         assert result["pr_number"] == 42
         assert "DREDGE MCP" in result["comment"]
-        assert result["is_dependabot"] == False
+        assert result["is_dependabot"] is False
     
     def test_handle_dependabot_pr(self):
         """Test handling of Dependabot pull request events"""
@@ -197,7 +197,7 @@ class TestGitHubEventHandler:
         result = handler.process()
         
         assert result["status"] == "success"
-        assert result["is_mentioned"] == False
+        assert result["is_mentioned"] is False
         assert result["comment"] is None
     
     def test_handle_workflow_dispatch(self):

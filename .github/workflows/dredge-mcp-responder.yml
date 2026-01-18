@@ -66,9 +66,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Prepare event payload
-          echo '${{ toJson(github.event) }}' > event_payload.json
-          
           # Run DREDGE MCP event handler
           dredge-cli github-event \
             --event "$GITHUB_EVENT_NAME" \

@@ -156,19 +156,26 @@ def main(argv=None):
         return 0
     
     if args.command == "github-event":
-        from .github_event_handler import main as github_event_main
-        import sys
-        # Reconstruct argv for github_event_handler
-        github_argv = [
-            "--event", args.event,
-            "--payload", args.payload,
-            "--ref", args.ref,
-            "--repo", args.repo,
-            "--sha", args.sha,
-            "--out", args.out
-        ]
-        sys.argv = ["dredge-cli github-event"] + github_argv
-        return github_event_main()
+        from .github_event_handler import process_github_event
+        import json
+        
+        # Process the event directly without modifying sys.argv
+        result = process_github_event(
+            args.event,
+            args.payload,
+            args.ref,
+            args.repo,
+            args.sha
+        )
+        
+        # Write output to file
+        with open(args.out, "w") as f:
+            json.dump(result, f, indent=2)
+        
+        # Print to stdout
+        print(json.dumps(result, indent=2))
+        
+        return 0 if result.get("status") == "success" else 1
     
     parser.print_help()
     return 0
