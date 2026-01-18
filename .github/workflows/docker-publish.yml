@@ -66,6 +66,7 @@ jobs:
           tags: |
             type=ref,event=branch,suffix=-${{ matrix.suffix }}
             type=ref,event=pr,suffix=-${{ matrix.suffix }}
+            type=ref,event=tag,suffix=-${{ matrix.suffix }}
             type=semver,pattern={{version}},suffix=-${{ matrix.suffix }}
             type=semver,pattern={{major}}.{{minor}},suffix=-${{ matrix.suffix }}
             type=semver,pattern={{major}},suffix=-${{ matrix.suffix }}
