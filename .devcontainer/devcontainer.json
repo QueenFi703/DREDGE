@@ -72,7 +72,6 @@
           "editor.defaultFormatter": "vknabel.vscode-apple-swift-format",
           "editor.formatOnSave": false
         },
-        "swift.path": "/usr/bin/swift",
         "files.associations": {
           "*.swift": "swift",
           "Package.swift": "swift"
