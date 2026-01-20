@@ -6,7 +6,7 @@ import torch
 from dredge.string_theory import (
     StringVibration,
     StringTheoryNN,
-    StringQuasimocoIntegration,
+    StringQuasimotoIntegration,
     DREDGEStringTheoryServer,
     calculate_string_parameters,
     get_optimal_device,
@@ -148,8 +148,8 @@ def test_string_theory_nn_forward_device():
 
 
 def test_string_quasimoco_integration():
-    """Test StringQuasimocoIntegration."""
-    integration = StringQuasimocoIntegration(dimensions=10)
+    """Test StringQuasimotoIntegration."""
+    integration = StringQuasimotoIntegration(dimensions=10)
     
     assert integration is not None
     assert integration.dimensions == 10
@@ -157,7 +157,7 @@ def test_string_quasimoco_integration():
 
 def test_coupled_amplitude():
     """Test coupled amplitude calculation."""
-    integration = StringQuasimocoIntegration()
+    integration = StringQuasimotoIntegration()
     
     amplitude = integration.coupled_amplitude(
         string_modes=[1, 2, 3],
@@ -170,7 +170,7 @@ def test_coupled_amplitude():
 
 def test_generate_unified_field():
     """Test unified field generation."""
-    integration = StringQuasimocoIntegration()
+    integration = StringQuasimotoIntegration()
     
     field = integration.generate_unified_field(
         x_range=(0.0, 1.0),
