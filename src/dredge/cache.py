@@ -74,8 +74,8 @@ class MemoryCache(CacheBackend):
             self._cache[key] = entry
             logger.debug(f"Cache set: {key} (TTL: {ttl}s)" if ttl else f"Cache set: {key}")
             return True
-        except Exception as e:
-            logger.error(f"Failed to set cache entry: {e}")
+        except (TypeError, ValueError) as e:
+            logger.error(f"Failed to set cache entry due to invalid data: {e}")
             return False
     
     def delete(self, key: str) -> bool:
@@ -150,7 +150,7 @@ class FileCache(CacheBackend):
             
             logger.debug(f"Cache hit: {key}")
             return entry['value']
-        except Exception as e:
+        except (FileNotFoundError, json.JSONDecodeError, KeyError) as e:
             logger.error(f"Failed to read cache entry: {e}")
             return None
     
@@ -171,7 +171,7 @@ class FileCache(CacheBackend):
             
             logger.debug(f"Cache set: {key} (TTL: {ttl}s)" if ttl else f"Cache set: {key}")
             return True
-        except Exception as e:
+        except (IOError, json.JSONEncodeError, TypeError) as e:
             logger.error(f"Failed to write cache entry: {e}")
             return False
     
