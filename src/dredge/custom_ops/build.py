@@ -1,8 +1,20 @@
 import os
-from torch.utils.cpp_extension import load
+
+try:
+    from torch.utils.cpp_extension import load
+    TORCH_AVAILABLE = True
+except ImportError:
+    TORCH_AVAILABLE = False
+    load = None
 
 
 def build_extensions():
+    if not TORCH_AVAILABLE:
+        raise ImportError(
+            "PyTorch is required to build custom CUDA extensions. "
+            "Please install PyTorch with CUDA support: pip install torch"
+        )
+    
     this_dir = os.path.dirname(__file__)
     csrc_dir = os.path.abspath(os.path.join(this_dir, "..", "..", "..", "csrc"))
     sources = [

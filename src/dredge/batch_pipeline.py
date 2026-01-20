@@ -6,9 +6,9 @@ import time
 import json
 import asyncio
 import statistics
+import sys
 from typing import List, Dict, Any
 from concurrent.futures import ThreadPoolExecutor, as_completed
-import sys
 from pathlib import Path
 
 # Add src to path if running standalone
@@ -16,6 +16,39 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from dredge.mcp_server import QuasimotoMCPServer
 from dredge.monitoring import get_metrics_collector
+
+
+def _calculate_percentile(data: List[float], percentile: float) -> float:
+    """
+    Calculate percentile value from a list of numbers.
+    
+    Args:
+        data: List of numeric values
+        percentile: Percentile to calculate (0-100)
+        
+    Returns:
+        Percentile value
+    """
+    if not data:
+        return 0.0
+    
+    # Use statistics.quantiles if available (Python 3.8+)
+    try:
+        if len(data) >= 100:
+            quantile_count = 100
+            quantile_index = int(percentile) - 1
+        else:
+            quantile_count = 20
+            # Map to closest quantile
+            quantile_index = int(percentile / 5) - 1 if percentile >= 5 else 0
+        
+        quantiles = statistics.quantiles(data, n=quantile_count)
+        return quantiles[quantile_index] if quantile_index < len(quantiles) else max(data)
+    except (AttributeError, IndexError):
+        # Fallback for older Python versions or edge cases
+        sorted_data = sorted(data)
+        index = int(len(sorted_data) * percentile / 100.0)
+        return sorted_data[min(index, len(sorted_data) - 1)]
 
 
 class BatchInferencePipeline:
@@ -97,8 +130,8 @@ class BatchInferencePipeline:
                 'max': max(durations) if durations else 0,
                 'mean': statistics.mean(durations) if durations else 0,
                 'median': statistics.median(durations) if durations else 0,
-                'p95': statistics.quantiles(durations, n=20)[18] if len(durations) >= 20 else max(durations) if durations else 0,
-                'p99': statistics.quantiles(durations, n=100)[98] if len(durations) >= 100 else max(durations) if durations else 0,
+                'p95': _calculate_percentile(durations, 95),
+                'p99': _calculate_percentile(durations, 99),
             }
         }
         

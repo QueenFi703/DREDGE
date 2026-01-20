@@ -7,7 +7,7 @@ import json
 import time
 import hashlib
 from pathlib import Path
-from typing import Optional, Dict, Any, Union
+from typing import Optional, Dict, Any, Union, List
 from datetime import datetime, timedelta
 import logging
 
@@ -243,8 +243,8 @@ class ResultCache:
         key = self._make_key("spectrum", {"max_modes": max_modes, "dimensions": dimensions})
         return self.backend.set(key, result, ttl or self.default_ttl)
     
-    def get_unified_inference(self, dredge_insight: str, quasimoto_coords: list, 
-                             string_modes: list) -> Optional[Dict[str, Any]]:
+    def get_unified_inference(self, dredge_insight: str, quasimoto_coords: List[float], 
+                             string_modes: List[int]) -> Optional[Dict[str, Any]]:
         """Get cached unified inference result."""
         key = self._make_key("unified", {
             "insight": dredge_insight,
@@ -253,8 +253,8 @@ class ResultCache:
         })
         return self.backend.get(key)
     
-    def set_unified_inference(self, dredge_insight: str, quasimoto_coords: list,
-                             string_modes: list, result: Dict[str, Any],
+    def set_unified_inference(self, dredge_insight: str, quasimoto_coords: List[float],
+                             string_modes: List[int], result: Dict[str, Any],
                              ttl: Optional[int] = None) -> bool:
         """Cache unified inference result."""
         key = self._make_key("unified", {
