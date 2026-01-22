@@ -7,7 +7,7 @@ import json
 import time
 import hashlib
 from pathlib import Path
-from typing import Optional, Dict, Any, Union
+from typing import Optional, Dict, Any, Union, List
 from datetime import datetime, timedelta
 import logging
 
@@ -74,8 +74,8 @@ class MemoryCache(CacheBackend):
             self._cache[key] = entry
             logger.debug(f"Cache set: {key} (TTL: {ttl}s)" if ttl else f"Cache set: {key}")
             return True
-        except Exception as e:
-            logger.error(f"Failed to set cache entry: {e}")
+        except (TypeError, ValueError) as e:
+            logger.error(f"Failed to set cache entry due to invalid data: {e}")
             return False
     
     def delete(self, key: str) -> bool:
@@ -150,7 +150,7 @@ class FileCache(CacheBackend):
             
             logger.debug(f"Cache hit: {key}")
             return entry['value']
-        except Exception as e:
+        except (FileNotFoundError, json.JSONDecodeError, KeyError) as e:
             logger.error(f"Failed to read cache entry: {e}")
             return None
     
@@ -171,7 +171,7 @@ class FileCache(CacheBackend):
             
             logger.debug(f"Cache set: {key} (TTL: {ttl}s)" if ttl else f"Cache set: {key}")
             return True
-        except Exception as e:
+        except (IOError, json.JSONEncodeError, TypeError) as e:
             logger.error(f"Failed to write cache entry: {e}")
             return False
     
@@ -243,8 +243,8 @@ class ResultCache:
         key = self._make_key("spectrum", {"max_modes": max_modes, "dimensions": dimensions})
         return self.backend.set(key, result, ttl or self.default_ttl)
     
-    def get_unified_inference(self, dredge_insight: str, quasimoto_coords: list, 
-                             string_modes: list) -> Optional[Dict[str, Any]]:
+    def get_unified_inference(self, dredge_insight: str, quasimoto_coords: List[float], 
+                             string_modes: List[int]) -> Optional[Dict[str, Any]]:
         """Get cached unified inference result."""
         key = self._make_key("unified", {
             "insight": dredge_insight,
@@ -253,8 +253,8 @@ class ResultCache:
         })
         return self.backend.get(key)
     
-    def set_unified_inference(self, dredge_insight: str, quasimoto_coords: list,
-                             string_modes: list, result: Dict[str, Any],
+    def set_unified_inference(self, dredge_insight: str, quasimoto_coords: List[float],
+                             string_modes: List[int], result: Dict[str, Any],
                              ttl: Optional[int] = None) -> bool:
         """Cache unified inference result."""
         key = self._make_key("unified", {

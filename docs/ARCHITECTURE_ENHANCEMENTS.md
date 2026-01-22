@@ -279,7 +279,7 @@ docker-compose -f docker-compose.enhanced.yml up -d --scale quasimoto-mcp=3
 │  │           String Theory Module                  │        │
 │  │  - StringTheoryNN (GPU-enabled, deep)          │        │
 │  │  - StringVibration                             │        │
-│  │  - StringQuasimocoIntegration                  │        │
+│  │  - StringQuasimotoIntegration                  │        │
 │  └─────────────────────────────────────────────────┘        │
 │  ┌─────────────────────────────────────────────────┐        │
 │  │           Quasimoto Models                      │        │

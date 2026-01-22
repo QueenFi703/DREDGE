@@ -5,6 +5,11 @@
   "features": {
     "ghcr.io/devcontainers/features/python:1": {
       "version": "3.11"
+    },
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": "true",
+      "installOhMyZsh": "true",
+      "upgradePackages": "true"
     }
   },
   
@@ -16,24 +21,66 @@
       "onAutoForward": "notify"
     },
     "3002": {
-      "label": "DREDGE MCP Server (Quasimoto)",
+      "label": "DREDGE MCP Server (Quasimoto + Dependabot)",
       "onAutoForward": "notify"
     }
   },
   
-  "postCreateCommand": "pip install -r requirements.txt && pip install -e .",
+  "postCreateCommand": "bash -c '[ -f .git/shallow ] && git fetch --unshallow || echo \"Repository already has full history\"; pip install -r requirements.txt && pip install -e . && pip install black ruff mypy pytest pre-commit; if ! command -v swift &> /dev/null; then echo \"Swift not available in this container - Swift features will be disabled\"; fi'",
+  
+  // Optional: Configure GITHUB_TOKEN for Dependabot integration
+  // See .devcontainer/README.md for setup instructions
+  // Required permissions: security_events scope (read Dependabot alerts)
+  "remoteEnv": {},
   
   "customizations": {
     "vscode": {
       "extensions": [
         "ms-python.python",
-        "ms-python.vscode-pylance"
+        "ms-python.vscode-pylance",
+        "ms-python.black-formatter",
+        "ms-toolsai.jupyter",
+        "sswg.swift-lang",
+        "vknabel.vscode-apple-swift-format",
+        "GitHub.copilot",
+        "GitHub.copilot-chat",
+        "eamodio.gitlens"
       ],
       "settings": {
         "python.defaultInterpreterPath": "/usr/local/bin/python",
-        "python.linting.enabled": true,
-        "python.linting.pylintEnabled": true,
-        "python.formatting.provider": "black"
+        "python.terminal.activateEnvironment": true,
+        "python.testing.pytestEnabled": true,
+        "python.testing.unittestEnabled": false,
+        "python.testing.pytestArgs": [
+          "tests"
+        ],
+        "files.exclude": {
+          "**/__pycache__": true,
+          "**/*.pyc": true,
+          "**/.pytest_cache": true,
+          "**/.mypy_cache": true,
+          "**/.DS_Store": true
+        },
+        "editor.formatOnSave": false,
+        "editor.rulers": [
+          80,
+          120
+        ],
+        "[python]": {
+          "editor.defaultFormatter": "ms-python.black-formatter",
+          "editor.formatOnSave": false,
+          "editor.codeActionsOnSave": {
+            "source.organizeImports": "never"
+          }
+        },
+        "[swift]": {
+          "editor.defaultFormatter": "vknabel.vscode-apple-swift-format",
+          "editor.formatOnSave": false
+        },
+        "files.associations": {
+          "*.swift": "swift",
+          "Package.swift": "swift"
+        }
       }
     }
   },

@@ -21,7 +21,7 @@ A comprehensive string theory implementation featuring:
   - Hidden layer size: 64 neurons
   - Total parameters: 4,929
 
-- **StringQuasimocoIntegration**: Unified field calculations
+- **StringQuasimotoIntegration**: Unified field calculations
   - Couples string modes with Quasimoto wave functions
   - Generates unified field amplitudes
   - Computes coupled amplitude values

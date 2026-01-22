@@ -23,6 +23,9 @@ See the [GitHub MCP Integration Guide](docs/GITHUB_MCP_INTEGRATION.md) for detai
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** - Contribution guidelines
 - **[SWIFT_PACKAGE_GUIDE.md](SWIFT_PACKAGE_GUIDE.md)** - Swift development guide
 - **[docs/VSCODE_SETUP.md](docs/VSCODE_SETUP.md)** - VS Code setup instructions
+- **[docs/CONTAINER_ARCHITECTURE.md](docs/CONTAINER_ARCHITECTURE.md)** - Container architecture and deployment guide
+- **[docs/CONTAINER_QUICKSTART.md](docs/CONTAINER_QUICKSTART.md)** - Quick start for container deployment
+- **[docs/GITHUB_ACTIONS_CONTAINERS.md](docs/GITHUB_ACTIONS_CONTAINERS.md)** - GitHub Actions workflows for containers
 
 ## 🚀 Quick Start
 
@@ -48,13 +51,32 @@ make test-all
 
 ### Container Development
 
+Pre-built images are available on GitHub Container Registry:
+
+```bash
+# Pull and run latest CPU image
+docker pull ghcr.io/queenfi703/dredge-cli:latest-cpu
+docker run -p 3001:3001 ghcr.io/queenfi703/dredge-cli:latest-cpu
+
+# Pull and run latest GPU image
+docker pull ghcr.io/queenfi703/dredge-cli:latest-gpu
+docker run -p 3002:3002 --gpus all ghcr.io/queenfi703/dredge-cli:latest-gpu
+```
+
+Or build and run locally:
+
 ```bash
 # CPU-only Flask server
 make docker-up-cpu
 
 # GPU-enabled MCP server
 make docker-up-gpu
+
+# Full stack with monitoring
+make docker-profile-full
 ```
+
+See **[docs/CONTAINER_QUICKSTART.md](docs/CONTAINER_QUICKSTART.md)** for more container deployment options.
 
 See **[BUILD.md](BUILD.md)** for complete build instructions, CI triggers, and troubleshooting.
 
@@ -109,6 +131,7 @@ dredge-cli serve --host 0.0.0.0 --port 3001 --debug
 - **GET /** - API information and available endpoints
 - **GET /health** - Health check endpoint
 - **POST /lift** - Lift an insight with Dolly integration
+- **GET /quasimoto-gpu** - Quasimoto GPU visualization (repository language statistics)
 
 #### Example Usage
 
@@ -123,6 +146,9 @@ curl http://localhost:3001/health
 curl -X POST http://localhost:3001/lift \
   -H "Content-Type: application/json" \
   -d '{"insight_text": "Digital memory must be human-reachable."}'
+
+# View Quasimoto GPU visualization
+open http://localhost:3001/quasimoto-gpu
 ```
 
 ### 2. MCP Server (Port 3002) - Quasimoto Integration
@@ -152,6 +178,9 @@ dredge-cli mcp --host 0.0.0.0 --port 3002 --debug
 6. **string_spectrum** - Compute string theory vibrational spectrum
 7. **string_parameters** - Calculate fundamental string theory parameters
 8. **unified_inference** - Run unified DREDGE + Quasimoto + String Theory inference
+9. **get_dependabot_alerts** - Retrieve Dependabot security alerts for a repository
+10. **explain_dependabot_alert** - Get detailed explanation of a specific Dependabot alert
+11. **update_dependabot_alert** - Update Dependabot alert status (dismiss or reopen)
 
 #### Example MCP Request
 
@@ -211,9 +240,49 @@ curl -X POST http://localhost:3002/mcp \
   -d '{"operation": "load_model", "params": {"model_type": "string_theory", "config": {"dimensions": 10, "hidden_size": 64}}}'
 ```
 
+#### Dependabot Alert Management
+
+The MCP server now includes Dependabot alert integration for conversational dependency management:
+
+```bash
+# Get all Dependabot alerts for a repository
+curl -X POST http://localhost:3002/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"operation": "get_dependabot_alerts", "params": {"repo_owner": "QueenFi703", "repo_name": "DREDGE-Cli"}}'
+
+# Explain a specific alert with AI-powered recommendations
+curl -X POST http://localhost:3002/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"operation": "explain_dependabot_alert", "params": {"alert_id": 1, "repo_owner": "QueenFi703", "repo_name": "DREDGE-Cli"}}'
+
+# Update an alert status (dismiss or reopen)
+curl -X POST http://localhost:3002/mcp \
+  -H "Content-Type: application/json" \
+  -d '{
+    "operation": "update_dependabot_alert",
+    "params": {
+      "alert_id": 1,
+      "state": "dismissed",
+      "dismissed_reason": "not_used",
+      "dismissed_comment": "This dependency is not used in production"
+    }
+  }'
+```
+
+**Note:** Dependabot operations require a `GITHUB_TOKEN` environment variable with the `security_events` scope.
+
+**Available dismissed reasons:**
+- `fix_started` - A fix has already been started
+- `inaccurate` - This alert is inaccurate or incorrect
+- `no_bandwidth` - No bandwidth to fix this
+- `not_used` - Dependency is not used
+- `tolerable_risk` - Risk is tolerable
+
 ### GitHub Codespaces
 
-The repository includes `.devcontainer/devcontainer.json` configured to automatically forward ports 3001 and 3002 when running in GitHub Codespaces.
+The repository includes `.devcontainer/devcontainer.json` configured to:
+- Automatically forward ports 3001 and 3002 when running in GitHub Codespaces
+- Fetch the full git repository history (unshallow the repository) for complete commit access
 
 ## Swift Development
 

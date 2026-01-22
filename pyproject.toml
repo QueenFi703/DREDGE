@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=64", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -9,7 +9,7 @@ description = "DREDGE — A small Python utility (scaffold)."
 readme = "README.md"
 license = { text = "MIT" }
 authors = [{ name = "QueenFi703" }]
-requires-python = ">=3.9,<3.13"
+requires-python = ">=3.9,<3.15"
 classifiers = [
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
@@ -24,12 +24,18 @@ dredge-cli = "dredge.cli:main"
 [project.urls]
 Homepage = "https://github.com/QueenFi703/DREDGE"
 
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+dredge = ["custom_ops/*.py"]
+
 [tool.black]
 line-length = 88
-target-version = ['py39', 'py310', 'py311']
+target-version = ['py39', 'py310', 'py311', 'py312', 'py313', 'py314']  # All supported versions
 include = '\.pyi?$'
 extend-exclude = '''
-/(
+/
   # directories
   \.eggs
   | \.git
@@ -41,7 +47,7 @@ extend-exclude = '''
 
 [tool.ruff]
 line-length = 88
-target-version = "py39"
+target-version = "py39"  # Minimum supported version (code must work on py39+)
 select = [
     "E",   # pycodestyle errors
     "W",   # pycodestyle warnings

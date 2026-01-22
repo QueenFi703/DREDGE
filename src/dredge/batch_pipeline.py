@@ -2,20 +2,64 @@
 DREDGE Batch Processing Pipeline
 Demonstrates real-world use case for batch unified_inference with load testing.
 """
-import time
-import json
 import asyncio
+import json
 import statistics
-from typing import List, Dict, Any
-from concurrent.futures import ThreadPoolExecutor, as_completed
 import sys
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
+from typing import List, Dict, Any
 
 # Add src to path if running standalone
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from dredge.mcp_server import QuasimotoMCPServer
 from dredge.monitoring import get_metrics_collector
+
+
+def _calculate_percentile(data: List[float], percentile: float) -> float:
+    """
+    Calculate percentile value from a list of numbers.
+    
+    Args:
+        data: List of numeric values
+        percentile: Percentile to calculate (0-100)
+        
+    Returns:
+        Percentile value
+    """
+    if not data:
+        return 0.0
+    
+    # Use statistics.quantiles if available (Python 3.8+)
+    try:
+        # statistics.quantiles returns n-1 cut points
+        # For 95th percentile, we want the point where 95% of data is below
+        # With n=100, we get 99 cut points, so 95th percentile is at index 94
+        if percentile == 95:
+            quantiles = statistics.quantiles(data, n=100)
+            return quantiles[94] if len(data) >= 100 else quantiles[min(94, len(quantiles) - 1)]
+        elif percentile == 99:
+            quantiles = statistics.quantiles(data, n=100)
+            return quantiles[98] if len(data) >= 100 else quantiles[min(98, len(quantiles) - 1)]
+        else:
+            # General case
+            n = 100
+            quantiles = statistics.quantiles(data, n=n)
+            idx = int((percentile * (n - 1)) / 100)
+            return quantiles[min(idx, len(quantiles) - 1)]
+    except (AttributeError, IndexError):
+        # Fallback for edge cases
+        sorted_data = sorted(data)
+        k = (len(sorted_data) - 1) * percentile / 100.0
+        f = int(k)
+        c = f + 1
+        if c >= len(sorted_data):
+            return sorted_data[-1]
+        d0 = sorted_data[f] * (c - k)
+        d1 = sorted_data[c] * (k - f)
+        return d0 + d1
 
 
 class BatchInferencePipeline:
@@ -97,8 +141,8 @@ class BatchInferencePipeline:
                 'max': max(durations) if durations else 0,
                 'mean': statistics.mean(durations) if durations else 0,
                 'median': statistics.median(durations) if durations else 0,
-                'p95': statistics.quantiles(durations, n=20)[18] if len(durations) >= 20 else max(durations) if durations else 0,
-                'p99': statistics.quantiles(durations, n=100)[98] if len(durations) >= 100 else max(durations) if durations else 0,
+                'p95': _calculate_percentile(durations, 95),
+                'p99': _calculate_percentile(durations, 99),
             }
         }
         

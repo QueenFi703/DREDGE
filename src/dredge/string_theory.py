@@ -27,10 +27,14 @@ def get_optimal_device() -> str:
     Returns:
         Device string: 'cuda', 'mps', or 'cpu'
     """
-    if torch.cuda.is_available():
-        return 'cuda'
-    elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
-        return 'mps'
+    try:
+        if torch.cuda.is_available():
+            return 'cuda'
+        elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+            return 'mps'
+    except Exception:
+        # If any error occurs during device detection, fall back to CPU
+        pass
     return 'cpu'
 
 
@@ -219,7 +223,7 @@ class StringTheoryNN(nn.Module):
         }
 
 
-class StringQuasimocoIntegration:
+class StringQuasimotoIntegration:
     """
     Integration layer between String Theory and Quasimoto models.
     
@@ -348,7 +352,7 @@ class DREDGEStringTheoryServer:
             device: Device to use ('auto', 'cpu', 'cuda', or 'mps')
         """
         self.string_vibration = StringVibration()
-        self.integration = StringQuasimocoIntegration()
+        self.integration = StringQuasimotoIntegration()
         self.models: Dict[str, nn.Module] = {}
         
         # Determine device
