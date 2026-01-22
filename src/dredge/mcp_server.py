@@ -503,7 +503,11 @@ class QuasimotoMCPServer:
             response = requests.get(url, headers=headers, timeout=10)
             if response.status_code == 200:
                 alerts = response.json()
-                self.logger.info(f"Retrieved {len(alerts)} Dependabot alerts")
+                self.logger.info("Retrieved Dependabot alerts", extra={
+                    "count": len(alerts),
+                    "repo_owner": repo_owner,
+                    "repo_name": repo_name
+                })
                 return {
                     "success": True,
                     "alerts": alerts,
@@ -602,7 +606,11 @@ class QuasimotoMCPServer:
                 # Add recommendation based on CVSS score
                 recommendation = self._get_recommendation(cvss, severity)
 
-                self.logger.info(f"Successfully explained alert {alert_id}")
+                self.logger.info("Successfully explained alert", extra={
+                    "alert_id": alert_id,
+                    "severity": severity,
+                    "cvss_score": cvss
+                })
 
                 return {
                     "success": True,
@@ -744,7 +752,11 @@ class QuasimotoMCPServer:
             response = requests.patch(url, headers=headers, json=body, timeout=10)
             if response.status_code == 200:
                 alert = response.json()
-                self.logger.info(f"Successfully updated alert {alert_id} to state: {state}")
+                self.logger.info("Successfully updated alert", extra={
+                    "alert_id": alert_id,
+                    "state": state,
+                    "dismissed_reason": dismissed_reason
+                })
 
                 return {
                     "success": True,

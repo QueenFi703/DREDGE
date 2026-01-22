@@ -267,8 +267,6 @@ curl -X POST http://localhost:3002/mcp \
 - `not_used` - Dependency is not used
 - `tolerable_risk` - Risk is tolerable
 
-```
-
 ### GitHub Codespaces
 
 The repository includes `.devcontainer/devcontainer.json` configured to:
