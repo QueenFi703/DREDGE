@@ -170,7 +170,7 @@ jobs:
             test_command: "curl -f http://localhost:3002/ || exit 1"
     
     steps:
-      # Phase 1: Authentication (Cadence: Initial)
+      # Test-images job: Authentication and Testing (2-step flow)
       - name: Log in to Container Registry
         uses: docker/login-action@v3
         with:
@@ -178,7 +178,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Phase 2: Pull and Test (Cadence: Main, with timing controls)
+      # Step 2: Pull and test with cadenced timing
       - name: Pull and test image
         run: |
           echo "=== Pulling and testing ${{ matrix.suffix }} image ==="

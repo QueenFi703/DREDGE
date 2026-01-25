@@ -59,6 +59,8 @@ Workflow steps are organized into distinct phases, executed in a specific order 
 Each operation has appropriate wait times based on complexity:
 
 #### Test Image Cadence
+
+**docker-test.yml (PR validation)**:
 - **CPU images**: 15 second warmup
   - Simpler initialization
   - Fast service startup
@@ -66,10 +68,15 @@ Each operation has appropriate wait times based on complexity:
 - **GPU images**: 20 second warmup
   - CUDA library loading required
   - More complex initialization
+
+**docker-publish.yml (post-build tests)**:
+- **CPU builds**: 10 second warmup
+  - Already-published image
+  - Known-good state
   
-- **Post-build tests**: Variable timing (10-15s)
-  - GPU builds: 15s for CUDA initialization
-  - CPU builds: 10s for service startup
+- **GPU builds**: 15 second warmup
+  - CUDA initialization
+  - Reduced time for published images
 
 #### Cleanup Cadence
 - **Build cache pruning**: Filter `until=1h`
