@@ -1,12 +1,14 @@
-## Release v0.1.7
+## v0.1.7 - Dockerfile Optimization
 
-### Highlights:
-- Removed redundant pip cache cleanup commands from the Dockerfile.
+### Changes
+- Removed redundant `rm -rf /root/.cache/pip` commands from Dockerfile
+- The `--no-cache-dir` flag already prevents pip from creating caches
+- Kept necessary `/tmp/*` cleanup operations
+- Results in cleaner, more honest Dockerfile
 
-### Commit Details:
-- **Commit SHA:** 84dee8db2957cb9edebb00cc8944a3b888b41612
+### Technical Details
+- 6 redundant cache cleanup commands removed
+- No functional changes to build process
+- Smaller, more maintainable Dockerfile
 
-### Release Date:
-- 2026-01-25
-
-For a complete list of changes, visit the [changelog](https://github.com/QueenFi703/DREDGE-Cli/blob/main/CHANGELOG.md).
+**Full Changelog**: https://github.com/QueenFi703/DREDGE-Cli/compare/v0.1.6...v0.1.7
